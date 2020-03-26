@@ -1,0 +1,9 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.7
+    commands:
+      - echo Entered the install phase...
+      - pip3 install -r requirements.txt

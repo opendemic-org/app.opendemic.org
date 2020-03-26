@@ -1,0 +1,77 @@
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: gap: content:">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    <title>auggi</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/framework7.bundle.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/icons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-131911686-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'UA-131911686-1');
+    </script>
+
+    <!-- Hotjar Tracking Code for www.auggi.ai -->
+    <script>
+        (function(h,o,t,j,a,r){
+            h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+            h._hjSettings={hjid:1641696,hjsv:6};
+            a=o.getElementsByTagName('head')[0];
+            r=o.createElement('script');r.async=1;
+            r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+            a.appendChild(r);
+        })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+    </script>
+
+    <style>
+
+        .block {
+            margin-bottom: 10px !important;
+        }
+
+        .list {
+            margin-top: 10px !important;
+            margin-bottom: 20px !important;
+        }
+
+        .item-media > img {
+            width: 50px !important;
+            height: 50px !important;
+        }
+
+        .link {
+            color: white !important;
+        }
+
+        .title {
+            color: white !important;
+        }
+
+        .block-title, .block {
+            margin-top: 10px !important;
+        }
+
+        .item-media > img {
+            width: 50px !important;
+            height: 50px !important;
+        }
+
+        .item-media {
+            padding: 0px !important;
+        }
+
+    </style>
+
+</head>

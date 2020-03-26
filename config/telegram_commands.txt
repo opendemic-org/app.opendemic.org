@@ -1,0 +1,3 @@
+report - Share location and symptoms
+my_map - See how close you are to others
+help - Talk to us
