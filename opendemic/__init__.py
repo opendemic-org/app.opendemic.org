@@ -30,7 +30,7 @@ def send_reminders():
         except Exception as e:
             if notify_admin:
                 bot.send_message(
-                    chat_id=int(CONFIG.get('telegram-admin-id')),
+                    chat_id=int(CONFIG.get('telegram-credentials-telegram-admin-id')),
                     text="[ADMIN] `send_reminders` exception : {}".format(e)
                 )
                 notify_admin = False
@@ -39,7 +39,7 @@ def send_reminders():
 
     # alert admin
     bot.send_message(
-        chat_id=int(CONFIG.get('telegram-admin-id')),
+        chat_id=int(CONFIG.get('telegram-credentials-telegram-admin-id')),
         text="[ADMIN] Sent reminder to {}/{} humans.".format(count, len(audience))
     )
 
@@ -68,14 +68,14 @@ def send_daily_report():
         except Exception as e:
             if notify_admin:
                 bot.send_message(
-                    chat_id=int(CONFIG.get('telegram-admin-id')),
+                    chat_id=int(CONFIG.get('telegram-credentials-telegram-admin-id')),
                     text="[ADMIN] `send_daily_report` exception : {}".format(e)
                 )
                 notify_admin = False
 
     # alert admin
     bot.send_message(
-        chat_id=int(CONFIG.get('telegram-admin-id')),
+        chat_id=int(CONFIG.get('telegram-credentials-telegram-admin-id')),
         text="[ADMIN] Sent proximity report to {}/{} humans.".format(count, len(audience))
     )
 
@@ -100,7 +100,7 @@ def send_feedback_request():
         except Exception as e:
             if notify_admin:
                 bot.send_message(
-                    chat_id=int(CONFIG.get('telegram-admin-id')),
+                    chat_id=int(CONFIG.get('telegram-credentials-telegram-admin-id')),
                     text="[ADMIN] `send_feedback_request` exception : {}".format(e)
                 )
                 notify_admin = False
@@ -109,7 +109,7 @@ def send_feedback_request():
 
     # alert admin
     bot.send_message(
-        chat_id=int(CONFIG.get('telegram-admin-id')),
+        chat_id=int(CONFIG.get('telegram-credentials-telegram-admin-id')),
         text="[ADMIN] Sent feedback request to {}/{} humans.".format(count, len(audience))
     )
 
@@ -118,7 +118,7 @@ def create_app():
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
-        SECRET_KEY=CONFIG.get("app-secret-key")
+        SECRET_KEY=CONFIG.get("app-secret-key-value")
     )
     print("ENV : {}".format(app.config['ENV']))
 

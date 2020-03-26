@@ -47,7 +47,7 @@ class TelegramCommand(object):
 
 
 def get_telegram_bot_instance():
-	bot = telebot.TeleBot(CONFIG.get('telegram-token'))
+	bot = telebot.TeleBot(CONFIG.get('telegram-credentials-telegram-token'))
 	return bot
 
 
