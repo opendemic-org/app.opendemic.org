@@ -145,11 +145,17 @@ def create_app():
     register_webhook_url()
 
     # index endpoint
-    # @app.route('/')
-    # def index():
-    #     return render_template(
-    #         template_name_or_list="app.html"
-    #     )
+    @app.route('/')
+    def index():
+        response = Response(
+            response=json.dumps({
+                "success": True
+            }),
+            status=200,
+            mimetype='application/json'
+        )
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
 
     @app.route('/privacy')
     def privacy():
