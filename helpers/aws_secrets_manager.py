@@ -18,7 +18,7 @@ def to_json(myjson):
 
 
 def list_secrets():
-	region_name = "us-east-2"
+	region_name = "us-east-1"
 
 	# Create a Secrets Manager client
 	session = boto3.session.Session()
@@ -31,7 +31,7 @@ def list_secrets():
 
 
 def get_secret(secret_name):
-	region_name = "us-east-2"
+	region_name = "us-east-1"
 
 	# Create a Secrets Manager client
 	session = boto3.session.Session()
