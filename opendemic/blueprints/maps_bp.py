@@ -1,5 +1,5 @@
 from config.config import CONFIG, ENV, Environments
-from flask import Blueprint, Response, render_template, abort
+from flask import Blueprint, Response, render_template, abort, request
 from opendemic.controllers.human import Human, get_all_risky_humans, get_confirmed_cases_geojson
 
 
@@ -55,8 +55,15 @@ def local_map(human_id):
 
 @blueprint.route('/global_map', methods=['GET'])
 def global_map():
+	data = {}
+	data['lat'] = request.args.get('lat')
+	data['lng'] = request.args.get('lng')
+
 	# get most recent coordinates
-	self_lat_lng = [-73.966912, 40.715857]
+	if data['lat'] is not None and data['lng'] is not None:
+		self_lat_lng = [data['lng'], data['lat']]
+	else:
+		self_lat_lng = [-73.966912, 40.715857]
 
 	risky_humans = get_all_risky_humans(days_window=int(CONFIG.get('days_window')))
 
