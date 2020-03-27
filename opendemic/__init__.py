@@ -137,9 +137,8 @@ def create_app():
     scheduler.start()
 
     # register blueprints
-    from .blueprints import telegram_bp, maps_bp, fbmessenger_bp
+    from .blueprints import telegram_bp, maps_bp
     app.register_blueprint(blueprint=telegram_bp.blueprint, url_prefix='/webhook')
-    app.register_blueprint(blueprint=fbmessenger_bp.blueprint, url_prefix='/webhook')
     app.register_blueprint(blueprint=maps_bp.blueprint)
 
     # register Telegram bot
