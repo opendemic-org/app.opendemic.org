@@ -487,7 +487,7 @@ def get_all_risky_humans(days_window: int = None):
 
 
 def get_confirmed_cases_geojson():
-	version = '19032020'
+	version = '20200326'
 	with open('data/confirmed_cases_{}.json'.format(version)) as f:
 		data = json.load(f)
 
