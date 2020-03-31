@@ -8,6 +8,7 @@ ngrok.sh
 *.pth
 *.pyc
 __pycache__/
+dev_run_local.sh
 
 instance/
 
