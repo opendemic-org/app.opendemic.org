@@ -2,6 +2,8 @@ import json
 from config.config import CONFIG
 from flask import Flask, Response, render_template, abort
 from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from apscheduler.schedulers.background import BackgroundScheduler
 from opendemic.channels.telegram import register_webhook_url, get_telegram_menu, get_telegram_bot_instance
 from opendemic.database.sql_db import RDBManager
@@ -120,7 +122,11 @@ def create_app():
     app.config.from_mapping(
         SECRET_KEY=CONFIG.get("app-secret-key-value")
     )
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_DATABASE_URI'] = generate_db_uri()
     print("ENV : {}".format(app.config['ENV']))
+    app.db = SQLAlchemy(app)
+    app.migrate = Migrate(app, app.db)
 
     # add CORS
     cors = CORS(app)
@@ -164,3 +170,11 @@ def create_app():
         )
 
     return app
+
+
+def generate_db_uri():
+    return 'mysql://' + CONFIG.get('rds-aurora-mysql-opendemic-username') + ':' + \
+                        CONFIG.get('rds-aurora-mysql-opendemic-password') + '@' + \
+                        CONFIG.get('rds-aurora-mysql-opendemic-host') + ':' + \
+                        CONFIG.get('rds-aurora-mysql-opendemic-port') + '/' +\
+                        CONFIG.get('rds-aurora-mysql-opendemic-database')
