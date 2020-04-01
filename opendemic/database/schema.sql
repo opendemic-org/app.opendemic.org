@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS `geolocations` (
 
 CREATE TABLE IF NOT EXISTS `humans` (
   `id` char(36) NOT NULL,
-  `telegram_human_id` int(20) unsigned NOT NULL DEFAULT '0',
+  `telegram_human_id` int(20) unsigned DEFAULT NULL,
   `created` timestamp NOT NULL,
   `modified` timestamp NOT NULL ON UPDATE CURRENT_TIMESTAMP,
   `email` varchar(254) DEFAULT NULL,
@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS `humans` (
   `utm_term` varchar(254) DEFAULT NULL,
   `utm_content` varchar(254) DEFAULT NULL,
   `current_tz` varchar(254) NOT NULL DEFAULT 'America/New_York',
-  PRIMARY KEY (`telegram_human_id`)
+  `fingerprint` char(64) DEFAULT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE IF NOT EXISTS `log` (
