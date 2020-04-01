@@ -44,14 +44,14 @@ def location():
 
 			# validate FINGERPRINT
 			if param_name == LocationResourceFields.FINGERPRINT.value:
-				if not isinstance(params[param_name], str):
+				fingerprint_val, fingerprint_error = Human.validate_fingerprint(
+					fingerprint=params[LocationResourceFields.FINGERPRINT.value]
+				)
+				if not fingerprint_val:
 					validation_error_response.append({
-						"error": "attribute `{}` is not of type `str`".format(param_name)
+						"error": str(fingerprint_error)
 					})
-				if len(params[param_name]) != 64:
-					validation_error_response.append({
-						"error": "attribute `{}` is not of length 64".format(param_name)
-					})
+
 
 			# validate LATITUDE
 			if param_name == LocationResourceFields.LATITUDE.value:
