@@ -84,10 +84,14 @@ def location():
 			human = Human.new(fingerprint=params[LocationResourceFields.FINGERPRINT.value])
 
 		# log human location
-		human.log_location(
-			latitude=float(params[LocationResourceFields.LATITUDE.value]),
-			longitude=float(params[LocationResourceFields.LONGITUDE.value])
-		)
+		try:
+			human.log_location(
+				latitude=float(params[LocationResourceFields.LATITUDE.value]),
+				longitude=float(params[LocationResourceFields.LONGITUDE.value])
+			)
+		except Exception as e:
+			if ENV == Environments.DEVELOPMENT.value:
+				print(e)
 
 		# return risky humans
 		risky_humans = get_all_risky_humans(days_window=int(CONFIG.get('days_window')))
