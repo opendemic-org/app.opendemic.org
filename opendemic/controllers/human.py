@@ -328,6 +328,15 @@ DISCLAIMER: This only represents the data *Opendemic* users have shared and migh
 			pass
 
 	@staticmethod
+	def validate_fingerprint(fingerprint: str) -> (bool, Exception):
+		if not isinstance(fingerprint, str):
+			return False, TypeError("attribute `fingerprint` is not of type `str`")
+		if len(fingerprint) != 64:
+			return False, ValueError("attribute `fingerprint` is not of length 64")
+
+		return True, None
+
+	@staticmethod
 	def new(
 		telegram_human_id: int = None,
 		fingerprint: str = None,
