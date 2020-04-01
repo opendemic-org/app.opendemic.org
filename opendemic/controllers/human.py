@@ -329,7 +329,8 @@ DISCLAIMER: This only represents the data *Opendemic* users have shared and migh
 
 	@staticmethod
 	def new(
-		telegram_human_id: int,
+		telegram_human_id: int = None,
+		fingerprint: str = None,
 		email: str = None,
 		birth_year: int = None,
 		biological_sex: str = None,
@@ -340,6 +341,9 @@ DISCLAIMER: This only represents the data *Opendemic* users have shared and migh
 		utm_term: str = None,
 		utm_content: str = None
 	) -> bool:
+		if telegram_human_id is None and fingerprint is None:
+			return None
+
 		# create DB connection
 		rdb = RDBManager()
 
@@ -350,14 +354,15 @@ DISCLAIMER: This only represents the data *Opendemic* users have shared and migh
 		_, records_affected = rdb.execute(
 			sql_query="""
 				INSERT IGNORE INTO `humans`(
-					`id`, `telegram_human_id`, `created`, `modified`
+					`id`, `telegram_human_id`, `fingerprint`, `created`, `modified`
 				)
 				VALUES (
-					{}, {}, UTC_TIMESTAMP(), UTC_TIMESTAMP()
+					{}, {}, {}, UTC_TIMESTAMP(), UTC_TIMESTAMP()
 				)
 			""".format(
 				mysql_db_format_value(value=human_id),
-				mysql_db_format_value(value=telegram_human_id)
+				mysql_db_format_value(value=telegram_human_id),
+				mysql_db_format_value(value=fingerprint)
 			)
 		)
 		if ENV == Environments.DEVELOPMENT.value:
@@ -384,6 +389,21 @@ DISCLAIMER: This only represents the data *Opendemic* users have shared and migh
 			)
 		)
 		return records == 1
+
+	@staticmethod
+	def get_human_from_fingerprint(fingerprint: str):
+		rdb = RDBManager()
+		records, _ = rdb.execute(
+			sql_query="""
+						SELECT `id`
+						FROM `humans`
+						WHERE `fingerprint` = {}
+					""".format(
+				mysql_db_format_value(fingerprint)
+			)
+		)
+
+		return Human(human_id=records[0]['id']) if len(records) == 1 else None
 
 
 def validate_telegram_human_id(telegram_human_id: int) -> (bool, str):
