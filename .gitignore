@@ -9,6 +9,7 @@ ngrok.sh
 *.pyc
 __pycache__/
 dev_run_local.sh
+dev_worker_local.sh
 
 instance/
 
