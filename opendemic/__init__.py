@@ -128,16 +128,33 @@ def test_blocking_scheduler():
     )
 
 
-class Worker(object):
-    def __init__(self):
-        # declare scheduler
-        self._scheduler = BlockingScheduler({'apscheduler.timezone': 'UTC'})
+def create_worker():
+    # create and configure the app
+    worker = Flask(__name__, instance_relative_config=True)
 
-        # add jobs
-        self._scheduler.add_job(test_blocking_scheduler, 'cron', args=[], day='*', hour='*', minute='0, 14, 29, 44, 59')
+    # declare scheduler
+    scheduler = BackgroundScheduler({'apscheduler.timezone': 'UTC'})
 
-    def run(self):
-        self._scheduler.start()
+    # add jobs
+    scheduler.add_job(test_blocking_scheduler, 'cron', args=[], day='*', hour='*', minute='0, 14, 29, 44, 59')
+
+    # start scheduler
+    scheduler.start()
+
+    # index endpoint
+    @worker.route('/')
+    def index():
+        response = Response(
+            response=json.dumps({
+                "success": True
+            }),
+            status=200,
+            mimetype='application/json'
+        )
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+
+    return worker
 
 
 def create_app():
