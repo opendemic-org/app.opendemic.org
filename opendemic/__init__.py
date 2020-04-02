@@ -5,6 +5,7 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.blocking import BlockingScheduler
 from opendemic.channels.telegram import register_webhook_url, get_telegram_menu, get_telegram_bot_instance
 from opendemic.database.sql_db import RDBManager
 from opendemic.controllers.human import Human, get_all_risky_humans, get_confirmed_cases_geojson, \
@@ -114,6 +115,28 @@ def send_feedback_request():
         chat_id=int(CONFIG.get('telegram-credentials-telegram-admin-id')),
         text="[ADMIN] Sent feedback request to {}/{} humans.".format(count, len(audience))
     )
+
+
+def test_blocking_scheduler():
+    # create bot
+    bot = get_telegram_bot_instance()
+
+    # send message
+    bot.send_message(
+        chat_id=int(CONFIG.get('telegram-credentials-telegram-admin-id')),
+        text="[opendemic] hello world!"
+    )
+
+
+def create_worker():
+    # declare scheduler
+    scheduler = BlockingScheduler({'apscheduler.timezone': 'UTC'})
+
+    # add jobs
+    scheduler.add_job(test_blocking_scheduler, 'cron', args=[], day='*', hour='*', minute='0, 14, 29, 44, 59')
+
+    # start scheduler
+    scheduler.start()
 
 
 def create_app():
