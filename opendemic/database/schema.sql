@@ -65,3 +65,18 @@ CREATE TABLE IF NOT EXISTS `timezones` (
 
 -- 1.1
 ALTER TABLE `humans` ADD COLUMN `fingerprint` CHAR(64) DEFAULT NULL;
+
+
+-- 1.2
+CREATE TABLE IF NOT EXISTS `contact` (
+  `id` char(36) NOT NULL,
+  `phone_number` varchar(20) DEFAULT NULL,
+  `email` varchar(254) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+ALTER TABLE `humans` ADD COLUMN `contact_id` CHAR(36) DEFAULT NULL;
+
+ALTER TABLE `humans` ADD COLUMN `unsubscribed` tinyint(1) NOT NULL DEFAULT '0';
+
+ALTER TABLE `humans` DROP COLUMN `email`;
