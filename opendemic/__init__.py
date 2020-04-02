@@ -128,15 +128,16 @@ def test_blocking_scheduler():
     )
 
 
-def create_worker():
-    # declare scheduler
-    scheduler = BlockingScheduler({'apscheduler.timezone': 'UTC'})
+class Worker(object):
+    def __init__(self):
+        # declare scheduler
+        self._scheduler = BlockingScheduler({'apscheduler.timezone': 'UTC'})
 
-    # add jobs
-    scheduler.add_job(test_blocking_scheduler, 'cron', args=[], day='*', hour='*', minute='0, 14, 29, 44, 59')
+        # add jobs
+        self._scheduler.add_job(test_blocking_scheduler, 'cron', args=[], day='*', hour='*', minute='0, 14, 29, 44, 59')
 
-    # start scheduler
-    scheduler.start()
+    def run(self):
+        self._scheduler.start()
 
 
 def create_app():

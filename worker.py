@@ -1,4 +1,6 @@
-from opendemic import create_worker
+from opendemic import Worker
+
+application = Worker()
 
 if __name__ == "__main__":
-	create_worker()
+	application.run()
