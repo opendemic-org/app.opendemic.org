@@ -117,17 +117,6 @@ def send_feedback_request():
     )
 
 
-def test_blocking_scheduler():
-    # create bot
-    bot = get_telegram_bot_instance()
-
-    # send message
-    bot.send_message(
-        chat_id=int(CONFIG.get('telegram-credentials-telegram-admin-id')),
-        text="[opendemic] hello world!"
-    )
-
-
 def create_worker():
     # create and configure the app
     worker = Flask(__name__, instance_relative_config=True)
@@ -136,7 +125,9 @@ def create_worker():
     scheduler = BackgroundScheduler({'apscheduler.timezone': 'UTC'})
 
     # add jobs
-    scheduler.add_job(test_blocking_scheduler, 'cron', args=[], day='*', hour='*', minute='0, 14, 29, 44, 59')
+    scheduler.add_job(send_reminders, 'cron', args=[], day='*', hour='0, 6, 12, 18', minute='0')
+    scheduler.add_job(send_daily_report, 'cron', args=[], day='*', hour='6, 18', minute='0')
+    scheduler.add_job(send_feedback_request, 'cron', args=[], day='*/2', hour='8', minute='0')
 
     # start scheduler
     scheduler.start()
@@ -171,17 +162,6 @@ def create_app():
 
     # add CORS
     cors = CORS(app)
-
-    # declare scheduler
-    scheduler = BackgroundScheduler({'apscheduler.timezone': 'UTC'})
-
-    # main CRON jobs
-    scheduler.add_job(send_reminders, 'cron', args=[], day='*', hour='0, 6, 12, 18', minute='0')
-    scheduler.add_job(send_daily_report, 'cron', args=[], day='*', hour='6, 18', minute='0')
-    scheduler.add_job(send_feedback_request, 'cron', args=[], day='*/2', hour='8', minute='0')
-
-    # start scheduler
-    scheduler.start()
 
     # register blueprints
     from .blueprints import telegram_bp, maps_bp, location_bp, symptom_bp
