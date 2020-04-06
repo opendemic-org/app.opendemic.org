@@ -29,12 +29,14 @@ class SymptomResourceFields(Enum):
 	def has_value(cls, value):
 		return value in cls._value2member_map_
 
+
 SYMPTOMS_MAP = {
 	SymptomResourceFields.SYMPTOMS_FEVER.value: Symptoms.FEVER.value,
 	SymptomResourceFields.SYMPTOMS_COUGH.value: Symptoms.COUGH.value,
 	SymptomResourceFields.SYMPTOMS_SHORTNESS_OF_BREATH.value: Symptoms.SHORTNESS_OF_BREATH.value,
 	SymptomResourceFields.SYMPTOMS_CONFIRMED_COVID.value: Symptoms.CONFIRMED_COVID19.value
 }
+
 
 @blueprint.route('/symptom', methods=['POST'])
 def symptom():
