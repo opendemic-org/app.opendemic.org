@@ -284,7 +284,7 @@ DISCLAIMER: This only represents the data *Opendemic* users have shared and migh
 			if ENV == Environments.DEVELOPMENT.value:
 				print(e)
 
-	def log_location(self, latitude: float, longitude: float) -> (bool, datetime.datetime):
+	def log_location(self, latitude: float, longitude: float, send_alert: bool = True) -> (bool, datetime.datetime):
 		# validate inputs
 		if not isinstance(latitude, float) or not isinstance(longitude, float):
 			return False
@@ -304,7 +304,8 @@ DISCLAIMER: This only represents the data *Opendemic* users have shared and migh
 		)
 
 		# send alert
-		self.send_proximity_alert(lat=latitude, lng=longitude)
+		if send_alert:
+			self.send_proximity_alert(lat=latitude, lng=longitude)
 
 		# update TZ
 		self.update_tz(lat=latitude, lng=longitude)

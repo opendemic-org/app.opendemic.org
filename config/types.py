@@ -28,6 +28,7 @@ class Symptoms(Enum):
 	FEVER = 'fever'
 	SHORTNESS_OF_BREATH = 'shortness_of_breath'
 	COUGH = 'cough'
+	CONFIRMED_COVID19 = 'confirmed_covid19'
 
 	@classmethod
 	def value_to_member_name(cls, value):
