@@ -123,7 +123,7 @@ def create_worker():
     scheduler = BackgroundScheduler({'apscheduler.timezone': 'UTC'})
 
     # add jobs
-    scheduler.add_job(send_reminders, 'cron', args=[], day='*', hour='0, 6, 12, 18', minute='0')
+    scheduler.add_job(send_reminders, 'cron', args=[], day='*', hour='0, 8, 16', minute='0')
     scheduler.add_job(send_daily_report, 'cron', args=[], day='*', hour='6, 18', minute='0')
     scheduler.add_job(send_feedback_request, 'cron', args=[], day='*/2', hour='8', minute='0')
 
