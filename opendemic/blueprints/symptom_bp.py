@@ -83,23 +83,30 @@ def symptom():
 						lat = float(lat)
 						lng = float(lng)
 					except ValueError:
-						pass
+						if ENV == Environments.DEVELOPMENT.value:
+							print("coordinates value error")
 					except TypeError:
-						pass
+						if ENV == Environments.DEVELOPMENT.value:
+							print("coordinates type error")
 					else:
+						if ENV == Environments.DEVELOPMENT.value:
+							print("logging location at {}, {}".format(lat, lng))
 						human.log_location(latitude=lat, longitude=lng, send_alert=False)
+				else:
+					if ENV == Environments.DEVELOPMENT.value:
+						print("invalid coordinates")
 
 		# process symptoms
 		if SymptomResourceFields.SYMPTOMS.value in payload:
 			symptoms = payload[SymptomResourceFields.SYMPTOMS.value]
 			for symptom_key in symptoms:
-				print(symptom_key)
-				print("logged symptom : {}".format(SYMPTOMS_MAP[symptom_key]))
-				print('valid symptom : {}'.format(Symptoms.has_value(SYMPTOMS_MAP[symptom_key])))
+				if ENV == Environments.DEVELOPMENT.value:
+					print('valid symptom : {}'.format(Symptoms.has_value(SYMPTOMS_MAP[symptom_key])))
 				# case symptom is present
 				if symptoms[symptom_key] == 1 and symptom_key in SYMPTOMS_MAP:
 					resp = human.log_symptom(symptom_name=SYMPTOMS_MAP[symptom_key])
-					print("LOGGED? YES")
+					if ENV == Environments.DEVELOPMENT.value:
+						print("logged symptom {}".format(SYMPTOMS_MAP[symptom_key]))
 
 		# create response
 		response = Response(
