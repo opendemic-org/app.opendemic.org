@@ -226,8 +226,18 @@ class Human(object):
 		return risky_humans
 
 	def send_proximity_alert(self, lat: float, lng: float):
-		km_radius = int(CONFIG.get('km_radius'))
-		days_window = int(CONFIG.get('days_window'))
+		try:
+			km_radius = int(CONFIG.get('km_radius'))
+		except TypeError as e:
+			if ENV == Environments.DEVELOPMENT.value:
+				print(e)
+			km_radius = 3
+		try:
+			days_window = int(CONFIG.get('days_window'))
+		except TypeError as e:
+			if ENV == Environments.DEVELOPMENT.value:
+				print(e)
+			days_window = 14
 
 		risky_humans = self.get_risky_humans(lat=lat, lng=lng, days_window=days_window, km_radius=km_radius)
 
