@@ -216,6 +216,34 @@
             }
         });
 
+        map.addSource("source_circle_500", {
+            "type": "geojson",
+            "data": {
+                "type": "FeatureCollection",
+                "features": [{
+                    "type": "Feature",
+                    "geometry": {{ self_geojson_feature|tojson }}
+                }]
+            }
+        });
+
+        map.addLayer({
+            "id": "circle500",
+            "type": "circle",
+            "source": "source_circle_500",
+            "paint": {
+                "circle-radius": {
+                    stops: [
+                        [5, 1],
+                        [15, {{ km_radius*1000 }}]
+                    ],
+                    base: 2
+                },
+                "circle-color": "#298ff5",
+                "circle-opacity": 0.1
+            }
+        });
+
         // objects for caching and keeping track of HTML marker objects (for performance)
         var markers = {};
         var markersOnScreen = {};
