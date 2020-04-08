@@ -87,14 +87,20 @@ def location():
 		try:
 			human.log_location(
 				latitude=float(params[LocationResourceFields.LATITUDE.value]),
-				longitude=float(params[LocationResourceFields.LONGITUDE.value])
+				longitude=float(params[LocationResourceFields.LONGITUDE.value]),
+				send_alert=False
 			)
 		except Exception as e:
 			if ENV == Environments.DEVELOPMENT.value:
 				print(e)
 
-		# return risky humans
-		risky_humans = get_all_risky_humans(days_window=int(CONFIG.get('days_window')))
+		# get risky humans
+		risky_humans = Human.get_risky_humans(
+			lat=params[LocationResourceFields.LATITUDE.value],
+			lng=params[LocationResourceFields.LONGITUDE.value],
+			days_window=int(CONFIG.get('days_window')),
+			km_radius=int(CONFIG.get('km_radius'))
+		)
 		risky_humans_geojson = get_confirmed_cases_geojson()
 		for risky_human in risky_humans:
 			risky_humans_geojson["features"].append({
@@ -107,10 +113,18 @@ def location():
 					'coordinates': [float(risky_human['longitude']), float(risky_human['latitude'])]
 				}
 			})
-		response = Response(
-			response=json.dumps(risky_humans_geojson),
-			status=200,
-			mimetype='application/json'
+
+		# prepare map response
+		self_lat_lng = [params[LocationResourceFields.LONGITUDE.value], params[LocationResourceFields.LATITUDE.value]]
+		self_geojson_feature = {
+			'type': "Point",
+			'coordinates': self_lat_lng
+		}
+
+		return render_template('map.html',
+			self_geojson_feature=self_geojson_feature,
+			self_lat_lng=self_lat_lng,
+			risky_humans_geojson=risky_humans_geojson,
+			km_radius=int(CONFIG.get('km_radius')),
+			zoom_level=9
 		)
-		response.headers.add('Access-Control-Allow-Origin', '*')
-		return response
