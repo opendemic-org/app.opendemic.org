@@ -57,6 +57,28 @@ class Human(object):
 	def email(self):
 		return self.get_human_attribute(attribute_name='email')
 
+	@property
+	def unsubscribed(self):
+		return self.get_human_attribute(attribute_name='unsubscribed')
+
+	def unsubscribe(self):
+		rdb = RDBManager()
+		try:
+			_, records_affected = rdb.execute(
+				sql_query="""
+					UPDATE `humans`
+					SET
+						`unsubscribed` = 1
+					WHERE
+						`id` = {}
+						""".format(
+					mysql_db_format_value(value=self.id)
+				)
+			)
+		except Exception as e:
+			if ENV == Environments.DEVELOPMENT.value:
+				print(e)
+
 	def get_human_attribute(self, attribute_name: str):
 		# validate `human_id` existence
 		rdb = RDBManager()
@@ -363,6 +385,11 @@ DISCLAIMER: This only represents the data *Opendemic* users have shared and migh
 		except Exception as e:
 			if ENV == Environments.DEVELOPMENT.value:
 				print(e)
+			# try to unsubscribe
+			try:
+				self.unsubscribe()
+			except Exception as unsb_e:
+				pass
 
 	def log_location(self, latitude: float, longitude: float, send_alert: bool = True) -> (bool, datetime.datetime):
 		# validate inputs
@@ -614,7 +641,7 @@ def get_confirmed_cases_geojson():
 	return data
 
 
-def get_all_humans_for_notifications():
+def get_all_humans_for_telegram_notifications():
 	rdb = RDBManager()
 	audience, _ = rdb.execute(
 		sql_query="""
@@ -624,6 +651,10 @@ def get_all_humans_for_notifications():
 		FROM `humans`
 		WHERE
 			HOUR(CONVERT_TZ(UTC_TIMESTAMP(),'UTC',`current_tz`)) BETWEEN 8 AND 22
+			AND 
+			`telegram_human_id` is not null
+			AND 
+			`unsubscribed` = 0
 	        """
 	)
 

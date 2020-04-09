@@ -7,11 +7,11 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from opendemic.channels.telegram import register_webhook_url, get_telegram_menu, get_telegram_bot_instance
 from opendemic.database.sql_db import RDBManager
 from opendemic.controllers.human import Human, get_all_risky_humans, get_confirmed_cases_geojson, \
-    get_all_humans_for_notifications
+    get_all_humans_for_telegram_notifications
 
 
 def send_reminders():
-    audience = get_all_humans_for_notifications()
+    audience = get_all_humans_for_telegram_notifications()
 
     # create bot
     bot = get_telegram_bot_instance()
@@ -35,6 +35,12 @@ def send_reminders():
                     text="[ADMIN] `send_reminders` exception : {}".format(e)
                 )
                 notify_admin = False
+            # try to unsubscribe
+            try:
+                human = Human(human_id=member['id'])
+                human.unsubscribe()
+            except Exception as unsb_e:
+                pass
         else:
             count += 1
 
@@ -46,7 +52,7 @@ def send_reminders():
 
 
 def send_daily_report():
-    audience = get_all_humans_for_notifications()
+    audience = get_all_humans_for_telegram_notifications()
 
     # create bot
     bot = get_telegram_bot_instance()
@@ -82,7 +88,7 @@ def send_daily_report():
 
 
 def send_feedback_request():
-    audience = get_all_humans_for_notifications()
+    audience = get_all_humans_for_telegram_notifications()
 
     # create bot
     bot = get_telegram_bot_instance()
@@ -105,6 +111,12 @@ def send_feedback_request():
                     text="[ADMIN] `send_feedback_request` exception : {}".format(e)
                 )
                 notify_admin = False
+            # try to unsubscribe
+            try:
+                human = Human(human_id=member['id'])
+                human.unsubscribe()
+            except Exception as unsb_e:
+                pass
         else:
             count += 1
 
