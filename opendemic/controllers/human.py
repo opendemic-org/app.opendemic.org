@@ -229,47 +229,69 @@ class Human(object):
 	def get_risky_humans(lat: float, lng: float, days_window: int, km_radius: int):
 		# log data to db
 		rdb = RDBManager()
-		sql_query = """
+		pre_sql_query_1 = """
+				DROP FUNCTION IF EXISTS gauss;
+		"""
+		pre_sql_query_2 = """
+				CREATE FUNCTION gauss(mean float, stdev float) RETURNS float
+				BEGIN
+				set @x=rand(), @y=rand();
+				set @gaus = ((sqrt(-2*log(@x))*cos(2*pi()*@y))*stdev)+mean;
+				return @gaus;
+				END;
+		"""
+		sql_query = """						
 				SELECT 
-					agg.`human_id`,
-					agg.`date`,
-					agg.`latitude`,
-					agg.`longitude`,
-					round(( 6373 * acos( least(1.0,  
-						cos( radians({}) ) 
-						* cos( radians(agg.`latitude`) ) 
-						* cos( radians(agg.`longitude`) - radians({}) ) 
-						+ sin( radians({}) ) 
-						* sin( radians(agg.`latitude`) 
-					  ) ) ) 
-					), 1) as 'distance',
-					COUNT(DISTINCT(agg.`symptom`)) as 'risk_level'
+					round(agg.`latitude` + gauss(0,0.001), 5) AS 'latitude',
+					round(agg.`longitude` + gauss(0,0.001), 5) AS 'longitude',
+					CASE
+						WHEN agg.`risk_level` > 1 THEN agg.`risk_level`
+						ELSE COUNT(DISTINCT(agg.`symptom`))
+					END AS 'mag' 
 				FROM (
 				SELECT
 					geo.`human_id`,
-					DATE(geo.`created`) AS 'date',
+					DATE(sym.`created`) AS 'date',
 					geo.`latitude`,
 					geo.`longitude`,
 					sym.`symptom`,
-					sym.`value`
+					round(( 6373 * acos( least(1.0,  
+						cos( radians({}) ) 
+						* cos( radians(geo.`latitude`) ) 
+						* cos( radians(geo.`longitude`) - radians({}) ) 
+						+ sin( radians({}) ) 
+						* sin( radians(geo.`latitude`) 
+					  ) ) ) 
+					), 1) as 'distance',
+					CASE 
+						WHEN sym.`symptom` = 'verified_covid19' THEN 5
+						WHEN sym.`symptom` = 'confirmed_covid19' THEN 4
+						ELSE 1
+					END AS 'risk_level'
 				FROM `geolocations` as geo
 				LEFT JOIN `symptoms` as sym
 				ON 
 					geo.`human_id` = sym.`human_id`
 					AND 
-					DATE(geo.`created`) = DATE(sym.`created`)
+					DATE(sym.`created`) = DATE(geo.`created`)
 				WHERE 
 					sym.`symptom` is not null
 					AND
-					geo.`created` >= DATE(NOW()) - INTERVAL {} DAY
+					geo.`latitude` is not null
+					AND
+					geo.`longitude` is not null
+					AND
+					sym.`created` >= DATE(NOW()) - INTERVAL {} DAY
+					AND
+					(sym.`value` is not null or sym.`value` > 0)
+				HAVING distance <= {}
 				) as agg
 				GROUP BY 
 					agg.`human_id`,
 					agg.`date`,
 					agg.`latitude`,
-					agg.`longitude`
-				HAVING distance <= {}
-				ORDER BY distance
+					agg.`longitude`,
+					agg.`risk_level`;
 									""".format(
 			mysql_db_format_value(value=lat),
 			mysql_db_format_value(value=lng),
@@ -277,6 +299,8 @@ class Human(object):
 			days_window,
 			km_radius
 		)
+		rdb.pre_execute(sql_query=pre_sql_query_1)
+		rdb.pre_execute(sql_query=pre_sql_query_2)
 		risky_humans, _ = rdb.execute(sql_query=sql_query)
 
 		return risky_humans
@@ -287,13 +311,13 @@ class Human(object):
 		except TypeError as e:
 			if ENV == Environments.DEVELOPMENT.value:
 				print(e)
-			km_radius = 3
+			km_radius = 10
 		try:
 			days_window = int(CONFIG.get('days_window'))
 		except TypeError as e:
 			if ENV == Environments.DEVELOPMENT.value:
 				print(e)
-			days_window = 14
+			days_window = 28
 
 		risky_humans = self.get_my_risky_humans(lat=lat, lng=lng, days_window=days_window, km_radius=km_radius)
 

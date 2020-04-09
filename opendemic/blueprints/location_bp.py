@@ -36,12 +36,9 @@ def location():
 		params[LocationResourceFields.LATITUDE.value] = request.args.get(LocationResourceFields.LATITUDE.value)
 		params[LocationResourceFields.LONGITUDE.value] = request.args.get(LocationResourceFields.LONGITUDE.value)
 		params[LocationResourceFields.INCLUDE_LEGEND.value] = request.args.get(LocationResourceFields.INCLUDE_LEGEND.value)
-		print(params[LocationResourceFields.INCLUDE_LEGEND.value])
 		if params[LocationResourceFields.INCLUDE_LEGEND.value] is None:
-			print(params[LocationResourceFields.INCLUDE_LEGEND.value])
 			params[LocationResourceFields.INCLUDE_LEGEND.value] = True
 		else:
-			print(params[LocationResourceFields.INCLUDE_LEGEND.value])
 			try:
 				include_legend = bool(eval(str(params[LocationResourceFields.INCLUDE_LEGEND.value]).capitalize()))
 			except NameError as e:
@@ -122,12 +119,12 @@ def location():
 			"type": "FeatureCollection",
 			"src": "https://raw.githubusercontent.com/beoutbreakprepared/nCoV2019/master/latest_data/latestdata.csv",
 			"features": []
-		} # get_confirmed_cases_geojson()
+		}
 		for risky_human in risky_humans:
 			risky_humans_geojson["features"].append({
 				'type': 'Feature',
 				"properties": {
-					"mag": risky_human['risk_level']
+					"mag": risky_human['mag']
 				},
 				'geometry': {
 					'type': 'Point',
