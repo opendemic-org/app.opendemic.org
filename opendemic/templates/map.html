@@ -109,26 +109,24 @@
 
     // colors to use for the categories
     var colors = ['#fed976', '#feb24c', '#fd8d3c', '#fc4e2a', '#e31a1c'];
-    var layers = ['risk level 1', 'risk level 2', 'risk level 3', 'risk level 4', 'confirmed case'];
+    var layers = ['risk level 1', 'risk level 2', 'risk level 3', 'self-reported covid', 'confirmed covid'];
 
     map.on("load", function () {
         /* LEGEND */
         {% if include_legend %}
          for (i = 0; i < layers.length; i++) {
-            if (i != 3) {
-                var layer = layers[i];
-                var color = colors[i];
-                var item = document.createElement('div');
-                var key = document.createElement('span');
-                key.className = 'legend-key';
-                key.style.backgroundColor = color;
+            var layer = layers[i];
+            var color = colors[i];
+            var item = document.createElement('div');
+            var key = document.createElement('span');
+            key.className = 'legend-key';
+            key.style.backgroundColor = color;
 
-                var value = document.createElement('span');
-                value.innerHTML = layer;
-                item.appendChild(key);
-                item.appendChild(value);
-                legend.appendChild(item);
-            }
+            var value = document.createElement('span');
+            value.innerHTML = layer;
+            item.appendChild(key);
+            item.appendChild(value);
+            legend.appendChild(item);
         }
         {% endif %}
 
