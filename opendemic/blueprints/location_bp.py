@@ -13,6 +13,7 @@ class LocationResourceFields(Enum):
 	FINGERPRINT = 'fingerprint'
 	LATITUDE = 'lat'
 	LONGITUDE = 'lng'
+	INCLUDE_LEGEND = 'include_legend'
 
 	@classmethod
 	def value_to_member_name(cls, value):
@@ -24,6 +25,8 @@ class LocationResourceFields(Enum):
 		return value in cls._value2member_map_
 
 
+eval('False'.capitalize())
+
 @blueprint.route('/location', methods=['GET'])
 def location():
 	if request.method == 'GET':
@@ -32,6 +35,20 @@ def location():
 		params[LocationResourceFields.FINGERPRINT.value] = request.args.get(LocationResourceFields.FINGERPRINT.value)
 		params[LocationResourceFields.LATITUDE.value] = request.args.get(LocationResourceFields.LATITUDE.value)
 		params[LocationResourceFields.LONGITUDE.value] = request.args.get(LocationResourceFields.LONGITUDE.value)
+		params[LocationResourceFields.INCLUDE_LEGEND.value] = request.args.get(LocationResourceFields.INCLUDE_LEGEND.value)
+		print(params[LocationResourceFields.INCLUDE_LEGEND.value])
+		if params[LocationResourceFields.INCLUDE_LEGEND.value] is None:
+			print(params[LocationResourceFields.INCLUDE_LEGEND.value])
+			params[LocationResourceFields.INCLUDE_LEGEND.value] = True
+		else:
+			print(params[LocationResourceFields.INCLUDE_LEGEND.value])
+			try:
+				include_legend = bool(eval(str(params[LocationResourceFields.INCLUDE_LEGEND.value]).capitalize()))
+			except NameError as e:
+				if ENV == Environments.DEVELOPMENT.value:
+					print(e)
+				include_legend = True
+			params[LocationResourceFields.INCLUDE_LEGEND.value] = include_legend
 
 		# validate URL parameters
 		validation_error_response = []
@@ -101,7 +118,11 @@ def location():
 			days_window=int(CONFIG.get('days_window')),
 			km_radius=int(CONFIG.get('km_radius'))
 		)
-		risky_humans_geojson = get_confirmed_cases_geojson()
+		risky_humans_geojson = {
+			"type": "FeatureCollection",
+			"src": "https://raw.githubusercontent.com/beoutbreakprepared/nCoV2019/master/latest_data/latestdata.csv",
+			"features": []
+		} # get_confirmed_cases_geojson()
 		for risky_human in risky_humans:
 			risky_humans_geojson["features"].append({
 				'type': 'Feature',
@@ -126,5 +147,6 @@ def location():
 			self_lat_lng=self_lat_lng,
 			risky_humans_geojson=risky_humans_geojson,
 			km_radius=int(CONFIG.get('km_radius')),
+			include_legend=params[LocationResourceFields.INCLUDE_LEGEND.value],
 			zoom_level=9
 		)

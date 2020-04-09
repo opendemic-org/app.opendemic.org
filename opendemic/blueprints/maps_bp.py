@@ -49,6 +49,7 @@ def local_map(human_id):
 		self_lat_lng=self_lat_lng,
 		risky_humans_geojson=risky_humans_geojson,
 		km_radius=int(CONFIG.get('km_radius')),
+		include_legend=True,
 		zoom_level=9
 	)
 
@@ -86,5 +87,6 @@ def global_map():
 		self_lat_lng=self_lat_lng,
 		risky_humans_geojson=risky_humans_geojson,
 		km_radius=0,
+		include_legend=True,
 		zoom_level=1
 	)

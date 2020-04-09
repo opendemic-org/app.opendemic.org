@@ -86,7 +86,9 @@
 <body>
 
 <div id='map' class="map" style=''></div>
+{% if include_legend %}
 <div class='map-overlay' id='legend'></div>
+{% endif %}
 <script>
     mapboxgl.accessToken = "pk.eyJ1IjoiZGF2aWRhdWdnaSIsImEiOiJjazdxczVod2wwN2ZwM2VuemkzY2l2NG5kIn0.GPlrMe9eVHm8twoWcghGpw";
 
@@ -111,7 +113,8 @@
 
     map.on("load", function () {
         /* LEGEND */
-        for (i = 0; i < layers.length; i++) {
+        {% if include_legend %}
+         for (i = 0; i < layers.length; i++) {
             if (i != 3) {
                 var layer = layers[i];
                 var color = colors[i];
@@ -127,6 +130,7 @@
                 legend.appendChild(item);
             }
         }
+        {% endif %}
 
         /* Image: An image is loaded and added to the map. */
         map.loadImage("https://i.imgur.com/MK4NUzI.png", function(error, image) {
