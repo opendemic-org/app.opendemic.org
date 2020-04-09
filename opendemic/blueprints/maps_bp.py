@@ -1,6 +1,6 @@
 from config.config import CONFIG, ENV, Environments
 from flask import Blueprint, Response, render_template, abort, request
-from opendemic.controllers.human import Human, get_all_risky_humans, get_confirmed_cases_geojson
+from opendemic.controllers.human import Human
 
 
 blueprint = Blueprint('maps', __name__)
@@ -29,14 +29,23 @@ def local_map(human_id):
 		'coordinates': self_lat_lng
 	}
 
-	risky_humans = get_all_risky_humans(days_window=int(CONFIG.get('days_window')))
-
-	risky_humans_geojson = get_confirmed_cases_geojson()
+	# get risky humans
+	risky_humans = Human.get_risky_humans(
+		lat=lat,
+		lng=lng,
+		days_window=int(CONFIG.get('days_window')),
+		km_radius=int(CONFIG.get('km_radius'))
+	)
+	risky_humans_geojson = {
+		"type": "FeatureCollection",
+		"src": "https://raw.githubusercontent.com/beoutbreakprepared/nCoV2019/master/latest_data/latestdata.csv",
+		"features": []
+	}
 	for risky_human in risky_humans:
 		risky_humans_geojson["features"].append({
 			'type': 'Feature',
 			"properties": {
-				"mag": risky_human['risk_level']
+				"mag": risky_human['mag']
 			},
 			'geometry': {
 				'type': 'Point',
@@ -66,14 +75,22 @@ def global_map():
 	else:
 		self_lat_lng = [-73.966912, 40.715857]
 
-	risky_humans = get_all_risky_humans(days_window=int(CONFIG.get('days_window')))
-
-	risky_humans_geojson = get_confirmed_cases_geojson()
+	# get risky humans
+	risky_humans = Human.get_risky_humans(
+		lat=data['lat'],
+		lng=data['lng'],
+		days_window=int(CONFIG.get('days_window'))
+	)
+	risky_humans_geojson = {
+		"type": "FeatureCollection",
+		"src": "https://raw.githubusercontent.com/beoutbreakprepared/nCoV2019/master/latest_data/latestdata.csv",
+		"features": []
+	}
 	for risky_human in risky_humans:
 		risky_humans_geojson["features"].append({
 			'type': 'Feature',
 			"properties": {
-				"mag": risky_human['risk_level']
+				"mag": risky_human['mag']
 			},
 			'geometry': {
 				'type': 'Point',

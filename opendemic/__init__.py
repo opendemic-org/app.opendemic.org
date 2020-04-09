@@ -6,12 +6,11 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.blocking import BlockingScheduler
 from opendemic.channels.telegram import register_webhook_url, get_telegram_menu, get_telegram_bot_instance
 from opendemic.database.sql_db import RDBManager
-from opendemic.controllers.human import Human, get_all_risky_humans, get_confirmed_cases_geojson, \
-    get_all_humans_for_telegram_notifications
+from opendemic.controllers.human import Human
 
 
 def send_reminders():
-    audience = get_all_humans_for_telegram_notifications()
+    audience = Human.get_all_humans_for_telegram_notifications()
 
     # create bot
     bot = get_telegram_bot_instance()
@@ -52,7 +51,7 @@ def send_reminders():
 
 
 def send_daily_report():
-    audience = get_all_humans_for_telegram_notifications()
+    audience = Human.get_all_humans_for_telegram_notifications()
 
     # create bot
     bot = get_telegram_bot_instance()
@@ -88,7 +87,7 @@ def send_daily_report():
 
 
 def send_feedback_request():
-    audience = get_all_humans_for_telegram_notifications()
+    audience = Human.get_all_humans_for_telegram_notifications()
 
     # create bot
     bot = get_telegram_bot_instance()

@@ -248,9 +248,11 @@ class Human(object):
 		return risky_humans
 
 	@staticmethod
-	def get_risky_humans(lat: float, lng: float, days_window: int, km_radius: int):
-		# log data to db
+	def get_risky_humans(lat: float, lng: float, days_window: int, km_radius: int = None):
+		# get DB
 		rdb = RDBManager()
+
+		# store rand gaussian procedure
 		pre_sql_query_1 = """
 				DROP FUNCTION IF EXISTS gauss;
 		"""
@@ -262,6 +264,10 @@ class Human(object):
 				return @gaus;
 				END;
 		"""
+		rdb.pre_execute(sql_query=pre_sql_query_1)
+		rdb.pre_execute(sql_query=pre_sql_query_2)
+
+		# fetch cases
 		sql_query = """						
 				SELECT 
 					round(agg.`latitude` + gauss(0,0.001), 5) AS 'latitude',
@@ -306,7 +312,7 @@ class Human(object):
 					sym.`created` >= DATE(NOW()) - INTERVAL {} DAY
 					AND
 					(sym.`value` is not null or sym.`value` > 0)
-				HAVING distance <= {}
+				{}
 				) as agg
 				GROUP BY 
 					agg.`human_id`,
@@ -319,10 +325,8 @@ class Human(object):
 			mysql_db_format_value(value=lng),
 			mysql_db_format_value(value=lat),
 			days_window,
-			km_radius
+			"HAVING distance <= {}".format(km_radius) if km_radius is not None else ""
 		)
-		rdb.pre_execute(sql_query=pre_sql_query_1)
-		rdb.pre_execute(sql_query=pre_sql_query_2)
 		risky_humans, _ = rdb.execute(sql_query=sql_query)
 
 		return risky_humans
@@ -532,130 +536,48 @@ DISCLAIMER: This only represents the data *Opendemic* users have shared and migh
 
 		return Human(human_id=records[0]['id']) if len(records) == 1 else None
 
-
-def validate_telegram_human_id(telegram_human_id: int) -> (bool, str):
-	# check `telegram_human_id` type
-	if not isinstance(telegram_human_id, int):
-		return TypeError('`telegram_human_id` of type {}. Expected [int]'.format(type(telegram_human_id)))
-
-	# init DB connection
-	rdb = RDBManager()
-
-	# check if `telegram_id` exists in db
-	telegram_human_id_search_results, _ = rdb.execute(
-		sql_query="""
-			SELECT *
-			FROM `humans`
-			WHERE `telegram_human_id` = {}
-		""".format(telegram_human_id)
-	)
-
-	# return results
-	if len(telegram_human_id_search_results) == 1:
-		return True, telegram_human_id_search_results[0]['id']
-	else:
-		return False, None
-
-
-def get_all_risky_humans(days_window: int = None):
-	# log data to db
-	rdb = RDBManager()
-	risky_humans, _ = rdb.execute(
-		sql_query="""
+	@staticmethod
+	def get_all_humans_for_telegram_notifications():
+		rdb = RDBManager()
+		audience, _ = rdb.execute(
+			sql_query="""
 			SELECT 
-				agg.`human_id`,
-				agg.`date`,
-				ROUND(agg.`latitude`, 3) as 'latitude',
-				ROUND(agg.`longitude`, 3) as 'longitude',
-				COUNT(DISTINCT(agg.`symptom`)) as 'risk_level'
-			FROM (
-			SELECT
-				geo.`human_id`,
-				DATE(geo.`created`) AS 'date',
-				geo.`latitude`,
-				geo.`longitude`,
-				sym.`symptom`,
-				sym.`value`
-			FROM `geolocations` as geo
-			LEFT JOIN `symptoms` as sym
-			ON 
-				geo.`human_id` = sym.`human_id`
+				`id`, 
+				`telegram_human_id`
+			FROM `humans`
+			WHERE
+				HOUR(CONVERT_TZ(UTC_TIMESTAMP(),'UTC',`current_tz`)) BETWEEN 8 AND 22
 				AND 
-				DATE(geo.`created`) = DATE(sym.`created`)
-			WHERE 
-				sym.`symptom` is not null
-			) as agg
-			GROUP BY 
-				agg.`human_id`,
-				agg.`date`,
-				agg.`latitude`,
-				agg.`longitude`
-		"""
-	)
+				`telegram_human_id` is not null
+				AND 
+				`unsubscribed` = 0
+		        """
+		)
 
-	return risky_humans
+		return audience
 
+	@staticmethod
+	def validate_telegram_human_id(telegram_human_id: int) -> (bool, str):
+		# check `telegram_human_id` type
+		if not isinstance(telegram_human_id, int):
+			return TypeError('`telegram_human_id` of type {}. Expected [int]'.format(type(telegram_human_id)))
 
-# def process_confirmed_cases_geojson():
-# 	version = '15032020'
-# 	beoutbreakprepared_outside_hubei_covid19_data_source = "https://raw.githubusercontent.com/beoutbreakprepared/nCoV2019/master/dataset_archive/outside_Hubei.data.14032020T011131.csv"
-# 	beoutbreakprepared_hubei_covid19_data_source = "https://raw.githubusercontent.com/beoutbreakprepared/nCoV2019/master/dataset_archive/outside_Hubei.data.15032020T011110.csv"
-# 	data_outside_hubei = pd.read_csv(beoutbreakprepared_outside_hubei_covid19_data_source)
-# 	data_hubei = pd.read_csv(beoutbreakprepared_hubei_covid19_data_source)
-# 	data = pd.concat([data_outside_hubei, data_hubei], axis=0)
-# 	data = data[~pd.isna(data['date_confirmation'])]
-# 	data['date_confirmation'] = pd.to_datetime(data['date_confirmation'].apply(lambda x: x[:10]))
-# 	confirmed_cases = data[['latitude', 'longitude', 'date_confirmation']].to_dict(orient='records')
-# 	# data_agg = data.groupby(['latitude', 'longitude']).count().reset_index().to_dict(orient='records')
-#
-# 	features = []
-# 	for case in confirmed_cases:
-# 		features.append({
-# 			"type": "Feature",
-# 			"properties": {
-# 				"mag": 2
-# 			},
-# 			"geometry": {
-# 				"type": "Point",
-# 				"coordinates": [float(case['longitude']), float(case['latitude']), 0.0]
-# 			}
-# 		})
-#
-# 	geojson = {
-# 		'type': 'FeatureCollection',
-# 		'src': [beoutbreakprepared_outside_hubei_covid19_data_source, beoutbreakprepared_hubei_covid19_data_source],
-# 		'features': features
-# 	}
-# 	import json
-# 	with open('data/confirmed_cases_{}.json'.format(version), 'w') as f:
-# 		# this would place the entire output on one line
-# 		# use json.dump(lista_items, f, indent=4) to "pretty-print" with four spaces per indent
-# 		json.dump(geojson, f)
+		# init DB connection
+		rdb = RDBManager()
+
+		# check if `telegram_id` exists in db
+		telegram_human_id_search_results, _ = rdb.execute(
+			sql_query="""
+				SELECT *
+				FROM `humans`
+				WHERE `telegram_human_id` = {}
+			""".format(telegram_human_id)
+		)
+
+		# return results
+		if len(telegram_human_id_search_results) == 1:
+			return True, telegram_human_id_search_results[0]['id']
+		else:
+			return False, None
 
 
-def get_confirmed_cases_geojson():
-	version = '20200326'
-	with open('data/confirmed_cases_{}.json'.format(version)) as f:
-		data = json.load(f)
-
-	return data
-
-
-def get_all_humans_for_telegram_notifications():
-	rdb = RDBManager()
-	audience, _ = rdb.execute(
-		sql_query="""
-		SELECT 
-			`id`, 
-			`telegram_human_id`
-		FROM `humans`
-		WHERE
-			HOUR(CONVERT_TZ(UTC_TIMESTAMP(),'UTC',`current_tz`)) BETWEEN 8 AND 22
-			AND 
-			`telegram_human_id` is not null
-			AND 
-			`unsubscribed` = 0
-	        """
-	)
-
-	return audience

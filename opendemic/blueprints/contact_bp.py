@@ -1,7 +1,5 @@
 from config.config import CONFIG, ENV, Environments
 from flask import Blueprint, Response, render_template, abort, request
-from opendemic.controllers.human import Human, get_all_risky_humans, get_confirmed_cases_geojson
-import json
 from enum import Enum
 import boto3
 from botocore.exceptions import ClientError

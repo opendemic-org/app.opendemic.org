@@ -14,7 +14,7 @@ from helpers.url import url_add_params, compose_client_url
 from opendemic.fulfillment.command import process_telegram_command
 from opendemic.fulfillment.intent import process_intent
 from opendemic.logging.action import log_action, log_sent_message
-from opendemic.controllers.human import Human, validate_telegram_human_id
+from opendemic.controllers.human import Human
 from telebot import types
 
 blueprint = Blueprint('telegram_webhook', __name__)
@@ -49,7 +49,7 @@ def telegram(token):
             return '', 204
 
         # authenticate human
-        human_exists, human_id = validate_telegram_human_id(telegram_human_id=telegram_human_id)
+        human_exists, human_id = Human.validate_telegram_human_id(telegram_human_id=telegram_human_id)
 
         # debug prints
         if ENV == Environments.DEVELOPMENT.name:
