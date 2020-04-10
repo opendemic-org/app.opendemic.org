@@ -270,8 +270,14 @@ class Human(object):
 		# fetch cases
 		sql_query = """						
 				SELECT 
-					round(agg.`latitude` + gauss(0,0.001), 5) AS 'latitude',
-					round(agg.`longitude` + gauss(0,0.001), 5) AS 'longitude',
+					CASE
+						WHEN agg.`risk_level` = 5 THEN round(agg.`latitude` + gauss(0,0.002), 5)
+						ELSE round(agg.`latitude` + gauss(0,0.001), 5)
+					 END AS 'latitude',
+					 CASE
+						WHEN agg.`risk_level` = 5 THEN round(agg.`longitude` + gauss(0,0.002), 5)
+						ELSE round(agg.`longitude` + gauss(0,0.001), 5)
+					 END AS 'longitude',
 					CASE
 						WHEN agg.`risk_level` > 1 THEN agg.`risk_level`
 						ELSE COUNT(DISTINCT(agg.`symptom`))
