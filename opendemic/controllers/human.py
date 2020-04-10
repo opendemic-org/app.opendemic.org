@@ -331,7 +331,7 @@ class Human(object):
 			mysql_db_format_value(value=lng),
 			mysql_db_format_value(value=lat),
 			days_window,
-			"HAVING distance <= {}".format(km_radius) if km_radius is not None else ""
+			"HAVING distance <= {}".format(km_radius*1.5) if km_radius is not None else ""
 		)
 		risky_humans, _ = rdb.execute(sql_query=sql_query)
 
