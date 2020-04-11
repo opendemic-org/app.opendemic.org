@@ -163,7 +163,10 @@ def create_app():
     app.register_blueprint(blueprint=maps_bp.blueprint)
 
     # register Telegram bot
-    register_webhook_url()
+    try:
+        register_webhook_url()
+    except Exception as exception:
+        print("An exception occurred while registering the telegram webhook: ", exception)
 
     # index endpoint
     @app.route('/')
