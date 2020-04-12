@@ -176,7 +176,10 @@ def create_app():
     app.register_blueprint(blueprint=subscribe_bp.blueprint)
 
     # register Telegram bot
-    register_webhook_url()
+    try:
+        register_webhook_url()
+    except Exception as exception:
+        print("An exception occurred while registering the telegram webhook: ", exception)
 
     # index endpoint
     @app.route('/')
@@ -191,6 +194,10 @@ def create_app():
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
 
+    @app.route('/debug-sentry')
+    def trigger_error():
+        division_by_zero = 1 / 0
+
     @app.route('/privacy')
     def privacy():
         return render_template(
@@ -198,6 +205,8 @@ def create_app():
         )
 
     return app
+
+
 
 
 def generate_db_uri():
