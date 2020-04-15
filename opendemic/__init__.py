@@ -204,9 +204,25 @@ def create_app():
             template_name_or_list="privacy.html"
         )
 
+    # create Gauss function - TODO move to migration
+    rdb = RDBManager()
+
+    # store rand gaussian procedure
+    pre_sql_query_1 = """
+    				DROP FUNCTION IF EXISTS gauss;
+    		"""
+    pre_sql_query_2 = """
+    				CREATE FUNCTION gauss(mean float, stdev float) RETURNS float
+    				BEGIN
+    				set @x=rand(), @y=rand();
+    				set @gaus = ((sqrt(-2*log(@x))*cos(2*pi()*@y))*stdev)+mean;
+    				return @gaus;
+    				END;
+    		"""
+    rdb.pre_execute(sql_query=pre_sql_query_1)
+    rdb.pre_execute(sql_query=pre_sql_query_2)
+
     return app
-
-
 
 
 def generate_db_uri():
