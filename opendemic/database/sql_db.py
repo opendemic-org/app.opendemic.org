@@ -22,6 +22,7 @@ class RDBManager(object):
 			print(e)
 
 	def pre_execute(self, sql_query: str):
+		row_count = 0
 		try:
 			with self.connection.cursor() as cursor:
 				cursor.execute(sql_query)
@@ -30,13 +31,13 @@ class RDBManager(object):
 				# Commit
 				self.connection.commit()
 
-				# Return result
-				return row_count
-
 		except BaseException as e:
 			print(e)
+		return row_count
 
 	def execute(self, sql_query: str):
+		row_count = 0
+		result = []
 		try:
 			with self.connection.cursor() as cursor:
 				cursor.execute(sql_query)
@@ -46,8 +47,6 @@ class RDBManager(object):
 				# Commit
 				self.connection.commit()
 
-				# Return result
-				return result, row_count
-
 		except BaseException as e:
 			print(e)
+		return result, row_count
