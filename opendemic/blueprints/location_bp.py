@@ -120,17 +120,18 @@ def location():
 			"src": "https://raw.githubusercontent.com/beoutbreakprepared/nCoV2019/master/latest_data/latestdata.csv",
 			"features": []
 		}
-		for risky_human in risky_humans:
-			risky_humans_geojson["features"].append({
-				'type': 'Feature',
-				"properties": {
-					"mag": risky_human['mag']
-				},
-				'geometry': {
-					'type': 'Point',
-					'coordinates': [float(risky_human['longitude']), float(risky_human['latitude'])]
-				}
-			})
+		if risky_humans is not None:
+			for risky_human in risky_humans:
+				risky_humans_geojson["features"].append({
+					'type': 'Feature',
+					"properties": {
+						"mag": risky_human['mag']
+					},
+					'geometry': {
+						'type': 'Point',
+						'coordinates': [float(risky_human['longitude']), float(risky_human['latitude'])]
+					}
+				})
 
 		# prepare map response
 		self_lat_lng = [params[LocationResourceFields.LONGITUDE.value], params[LocationResourceFields.LATITUDE.value]]
