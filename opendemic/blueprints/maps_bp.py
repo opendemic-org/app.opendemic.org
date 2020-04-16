@@ -1,7 +1,7 @@
 from config.config import CONFIG, ENV, Environments
 from flask import Blueprint, Response, render_template, abort, request
 from opendemic.controllers.human import Human
-
+import json
 
 blueprint = Blueprint('maps', __name__)
 
@@ -63,9 +63,21 @@ def local_map(human_id):
 	)
 
 
-@blueprint.route('/global_map', methods=['GET'])
-def global_map():
-	data = {}
+@blueprint.route('/global/<string:token>', methods=['GET'])
+def global_map(token):
+	# case if token not valid
+	if token != CONFIG.get('global-map-token'):
+		response = Response(
+			response=json.dumps({
+				"success": True
+			}),
+			status=200,
+			mimetype='application/json'
+		)
+		response.headers.add('Access-Control-Allow-Origin', '*')
+		return response
+
+	data = dict()
 	data['lat'] = request.args.get('lat')
 	data['lng'] = request.args.get('lng')
 
