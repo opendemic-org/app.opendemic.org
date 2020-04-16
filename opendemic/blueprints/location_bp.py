@@ -25,8 +25,6 @@ class LocationResourceFields(Enum):
 		return value in cls._value2member_map_
 
 
-eval('False'.capitalize())
-
 @blueprint.route('/location', methods=['GET'])
 def location():
 	if request.method == 'GET':
@@ -65,7 +63,6 @@ def location():
 					validation_error_response.append({
 						"error": str(fingerprint_error)
 					})
-
 
 			# validate LATITUDE
 			if param_name == LocationResourceFields.LATITUDE.value:
