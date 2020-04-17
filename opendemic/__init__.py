@@ -3,18 +3,16 @@ from config.config import CONFIG
 from flask import Flask, Response, render_template, abort
 from flask_cors import CORS
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.schedulers.blocking import BlockingScheduler
 from opendemic.channels.telegram import register_webhook_url, get_telegram_menu, get_telegram_bot_instance
 from opendemic.database.sql_db import RDBManager
 from opendemic.controllers.human import Human
 
 
-def send_reminders():
-    audience = Human.get_all_humans_for_telegram_notifications()
+def send_reminders(hours_of_day: list):
+    audience = Human.get_all_humans_for_telegram_notifications(hours_of_day=hours_of_day)
 
     # create bot
     bot = get_telegram_bot_instance()
-
 
     # send to audience
     notify_admin = True
@@ -50,8 +48,8 @@ def send_reminders():
     )
 
 
-def send_daily_report():
-    audience = Human.get_all_humans_for_telegram_notifications()
+def send_daily_report(hours_of_day: list):
+    audience = Human.get_all_humans_for_telegram_notifications(hours_of_day=hours_of_day)
 
     # create bot
     bot = get_telegram_bot_instance()
@@ -86,8 +84,8 @@ def send_daily_report():
     )
 
 
-def send_feedback_request():
-    audience = Human.get_all_humans_for_telegram_notifications()
+def send_feedback_request(hours_of_day: list):
+    audience = Human.get_all_humans_for_telegram_notifications(hours_of_day=hours_of_day)
 
     # create bot
     bot = get_telegram_bot_instance()
@@ -134,9 +132,9 @@ def create_worker():
     scheduler = BackgroundScheduler({'apscheduler.timezone': 'UTC'})
 
     # add jobs
-    scheduler.add_job(send_reminders, 'cron', args=[], day='*', hour='0, 8, 16', minute='0')
-    scheduler.add_job(send_daily_report, 'cron', args=[], day='*', hour='6, 18', minute='0')
-    scheduler.add_job(send_feedback_request, 'cron', args=[], day='*/2', hour='8', minute='0')
+    scheduler.add_job(send_reminders, 'cron', args=[[8, 20]], day='*', hour='*/2', minute='0')
+    scheduler.add_job(send_daily_report, 'cron', args=[[8]], day='*', hour='*/2', minute='0')
+    scheduler.add_job(send_feedback_request, 'cron', args=[[10]], day='*/2', hour='*/2', minute='0')
 
     # start scheduler
     scheduler.start()

@@ -528,23 +528,42 @@ DISCLAIMER: This only represents the data *Opendemic* users have shared and migh
 		return Human(human_id=records[0]['id']) if len(records) == 1 else None
 
 	@staticmethod
-	def get_all_humans_for_telegram_notifications():
-		rdb = RDBManager()
-		audience, _ = rdb.execute(
-			sql_query="""
+	def get_all_humans_for_telegram_notifications(hours_of_day: list) -> list:
+		# validate `hours_of_day`
+		if not isinstance(hours_of_day, list) or len(hours_of_day) == 0:
+			return []
+
+		for hour_of_day in hours_of_day:
+			if not isinstance(hour_of_day, int) or (hour_of_day < 0 or hour_of_day > 23):
+				return []
+
+		# ensure unique values
+		hours_of_day = list(set(hours_of_day))
+
+		# generate SQL query
+		sql_query = """
 			SELECT 
 				`id`, 
 				`telegram_human_id`
 			FROM `humans`
 			WHERE
-				HOUR(CONVERT_TZ(UTC_TIMESTAMP(),'UTC',`current_tz`)) BETWEEN 8 AND 22
+				HOUR(CONVERT_TZ(UTC_TIMESTAMP(),'UTC',`current_tz`)) IN ({})
 				AND 
 				`telegram_human_id` is not null
 				AND 
 				`unsubscribed` = 0
-		        """
+				        """.format(
+			", ".join([str(hour_of_day) for hour_of_day in hours_of_day])
 		)
 
+		# fetch audience from db
+		rdb = RDBManager()
+		audience = []
+		try:
+			audience, _ = rdb.execute(sql_query=sql_query)
+		except Exception as e:
+			if ENV == Environments.DEVELOPMENT.value:
+				print(e)
 		return audience
 
 	@staticmethod
