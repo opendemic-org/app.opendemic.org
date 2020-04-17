@@ -322,21 +322,11 @@ class Human(object):
 
 		return risky_humans
 
-	def send_proximity_alert(self, lat: float, lng: float):
-		try:
-			km_radius = int(CONFIG.get('km_radius'))
-		except TypeError as e:
-			if ENV == Environments.DEVELOPMENT.value:
-				print(e)
-			km_radius = 10
-		try:
-			days_window = int(CONFIG.get('days_window'))
-		except TypeError as e:
-			if ENV == Environments.DEVELOPMENT.value:
-				print(e)
-			days_window = 28
-
-		risky_humans = self.get_my_risky_humans(lat=lat, lng=lng, days_window=days_window, km_radius=km_radius)
+	@staticmethod
+	def get_proximity_alert(lat: float, lng: float):
+		km_radius = int(CONFIG.get('km_radius'))
+		days_window = int(CONFIG.get('days_window'))
+		risky_humans = Human.get_risky_humans(lat=lat, lng=lng, days_window=days_window, km_radius=km_radius)
 
 		# create alert message
 		if len(risky_humans) == 0:
@@ -350,16 +340,26 @@ class Human(object):
 			alert_info += "\n\nSee specific locations on the map below ⬇️ and *please exercise additional caution* ⚠️."
 
 		alert_message = """
-{} During the last {} days and within a {} km ({} miles) radius from your current location, {}
+		{} During the last {} days and within a {} km ({} miles) radius from your current location, {}
 
-DISCLAIMER: This only represents the data *Opendemic* users have shared and might not be complete. Always be cautious and follow your local public health authority's guidelines.
-		""".format(
+		DISCLAIMER: This only represents the data *Opendemic* users have shared and might not be complete. Always be cautious and follow your local public health authority's guidelines.
+				""".format(
 			alert_emoji,
 			days_window,
 			km_radius,
-			round(km_radius/1.609, 1),
+			round(km_radius / 1.609, 1),
 			alert_info
 		)
+
+		return alert_message
+
+	def send_proximity_alert(self, lat: float, lng: float):
+		# verify user has telegram id
+		if self.telegram_human_id is None:
+			return
+
+		# get proximity alert
+		alert_message = Human.get_proximity_alert(lat=lat, lng=lng)
 
 		# create bot
 		bot = get_telegram_bot_instance()
