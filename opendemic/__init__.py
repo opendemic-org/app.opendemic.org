@@ -165,10 +165,11 @@ def create_app():
     cors = CORS(app)
 
     # register blueprints
-    from .blueprints import telegram_bp, maps_bp, location_bp, symptom_bp, contact_bp, subscribe_bp
+    from .blueprints import telegram_bp, maps_bp, location_bp, symptom_bp, contact_bp, subscribe_bp, alert_bp
     app.register_blueprint(blueprint=telegram_bp.blueprint, url_prefix='/webhook')
     app.register_blueprint(blueprint=location_bp.blueprint, url_prefix='/human')
     app.register_blueprint(blueprint=symptom_bp.blueprint, url_prefix='/human')
+    app.register_blueprint(blueprint=alert_bp.blueprint, url_prefix='/human')
     app.register_blueprint(blueprint=maps_bp.blueprint)
     app.register_blueprint(blueprint=contact_bp.blueprint)
     app.register_blueprint(blueprint=subscribe_bp.blueprint)
