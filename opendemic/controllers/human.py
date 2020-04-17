@@ -187,66 +187,6 @@ class Human(object):
 		else:
 			return None
 
-	def get_my_risky_humans(self, lat: float, lng: float, days_window: int, km_radius: int):
-		# log data to db
-		rdb = RDBManager()
-		sql_query = """
-				SELECT 
-					agg.`human_id`,
-					agg.`date`,
-					agg.`latitude`,
-					agg.`longitude`,
-					round(( 6373 * acos( least(1.0,  
-						cos( radians({}) ) 
-						* cos( radians(agg.`latitude`) ) 
-						* cos( radians(agg.`longitude`) - radians({}) ) 
-						+ sin( radians({}) ) 
-						* sin( radians(agg.`latitude`) 
-					  ) ) ) 
-					), 1) as 'distance',
-					COUNT(DISTINCT(agg.`symptom`)) as 'risk_level'
-				FROM (
-				SELECT
-					geo.`human_id`,
-					DATE(geo.`created`) AS 'date',
-					geo.`latitude`,
-					geo.`longitude`,
-					sym.`symptom`,
-					sym.`value`
-				FROM `geolocations` as geo
-				LEFT JOIN `symptoms` as sym
-				ON 
-					geo.`human_id` = sym.`human_id`
-					AND 
-					DATE(geo.`created`) = DATE(sym.`created`)
-				WHERE 
-					geo.`human_id` != {}
-					AND
-					sym.`symptom` is not null
-					AND
-					geo.`created` >= DATE(NOW()) - INTERVAL {} DAY
-				) as agg
-				GROUP BY 
-					agg.`human_id`,
-					agg.`date`,
-					agg.`latitude`,
-					agg.`longitude`
-				HAVING distance <= {}
-				ORDER BY distance
-									""".format(
-			mysql_db_format_value(value=lat),
-			mysql_db_format_value(value=lng),
-			mysql_db_format_value(value=lat),
-			mysql_db_format_value(value=self.id),
-			days_window,
-			km_radius
-		)
-		if ENV == Environments.DEVELOPMENT.value:
-			print(sql_query)
-		risky_humans, _ = rdb.execute(sql_query=sql_query)
-
-		return risky_humans
-
 	@staticmethod
 	def get_risky_humans(lat: float, lng: float, days_window: int, km_radius: int = None):
 		# get DB
