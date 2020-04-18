@@ -259,7 +259,6 @@ class Human(object):
 			"HAVING distance <= {}".format(km_radius*5) if km_radius is not None else ""
 		)
 		risky_humans, _ = rdb.execute(sql_query=sql_query)
-
 		return risky_humans
 
 	@staticmethod

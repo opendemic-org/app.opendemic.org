@@ -1,4 +1,10 @@
 import json
+import datetime
+import time
+from colorama import init
+from colorama import Fore, Style
+from flask import g, request
+from rfc3339 import rfc3339
 from config.config import CONFIG
 from flask import Flask, Response, render_template, abort
 from flask_cors import CORS
@@ -6,7 +12,16 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from opendemic.channels.telegram import register_webhook_url, get_telegram_menu, get_telegram_bot_instance
 from opendemic.database.sql_db import RDBManager
 from opendemic.controllers.human import Human
+import prometheus_client
 
+
+CONTENT_TYPE_LATEST = str('text/plain; version=0.0.4; charset=utf-8')
+REQUEST_COUNT = prometheus_client.Counter(
+        'request_count', 'App Request Count',
+        ['app_name', 'method', 'endpoint', 'http_status']
+    )
+REQUEST_LATENCY = prometheus_client.Histogram('request_latency_seconds', 'Request latency',
+                                ['app_name', 'endpoint'])
 
 def send_reminders(hours_of_day: list):
     audience = Human.get_all_humans_for_telegram_notifications(hours_of_day=hours_of_day)
@@ -53,7 +68,6 @@ def send_daily_report(hours_of_day: list):
 
     # create bot
     bot = get_telegram_bot_instance()
-
     # send to audience
     notify_admin = True
     count = 0
@@ -163,6 +177,7 @@ def create_app():
     )
     # add CORS
     cors = CORS(app)
+    init(autoreset=True)
 
     # register blueprints
     from .blueprints import telegram_bp, maps_bp, location_bp, symptom_bp, contact_bp, subscribe_bp, alert_bp
@@ -180,6 +195,51 @@ def create_app():
     except Exception as exception:
         print("An exception occurred while registering the telegram webhook: ", exception)
 
+    @app.before_request
+    def start_timer():
+        g.start = time.time()
+
+    @app.after_request
+    def log_request(response):
+
+        if request.path == "/metrics/" or request.path == "/metrics":
+            return response
+        now = time.time()
+        duration = round(now - g.start, 2)
+        REQUEST_LATENCY.labels('opendemic', request.path).observe(duration)
+        dt = datetime.datetime.fromtimestamp(now)
+        timestamp = rfc3339(dt, utc=True)
+        REQUEST_COUNT.labels('opendemic', request.method, request.path,
+                             response.status_code).inc()
+
+        ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+        host = request.host.split(':', 1)[0]
+        args = dict(request.args)
+
+        log_params = [
+            ('method', request.method, 'blue'),
+            ('path', request.path, 'blue'),
+            ('status', response.status_code, 'yellow'),
+            ('duration', duration, 'green'),
+            ('time', timestamp, 'magenta'),
+            ('ip', ip, 'red'),
+            ('host', host, 'red'),
+            ('params', args, 'blue')
+        ]
+
+        request_id = request.headers.get('X-Request-ID')
+        if request_id:
+            log_params.append(('request_id', request_id, 'yellow'))
+
+        parts = []
+        for name, value, color in log_params:
+            part = (Fore.BLUE+name+" = "+Fore.GREEN+str(value))
+            parts.append(part)
+        line = " ".join(parts)
+
+        app.logger.info(line)
+
+        return response
     # index endpoint
     @app.route('/')
     def index():
@@ -202,6 +262,11 @@ def create_app():
         return render_template(
             template_name_or_list="privacy.html"
         )
+
+    @app.route('/metrics/')
+    def metrics():
+        return Response(prometheus_client.generate_latest(), mimetype=CONTENT_TYPE_LATEST)
+    return app
 
     # create Gauss function - TODO move to migration
     rdb = RDBManager()
