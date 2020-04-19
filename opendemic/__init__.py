@@ -183,7 +183,7 @@ def create_app():
 
     # register blueprints
     from opendemic.webhook.telegram import controller
-    from opendemic.contact import contact_bp
+    from opendemic.contact import controller
     from opendemic.map import maps_bp
     from opendemic.human.symptom import symptom_bp
     from opendemic.human.subscription import subscribe_bp
@@ -194,7 +194,7 @@ def create_app():
     app.register_blueprint(blueprint=symptom_bp.blueprint, url_prefix='/human')
     app.register_blueprint(blueprint=alert_bp.blueprint, url_prefix='/human')
     app.register_blueprint(blueprint=maps_bp.blueprint)
-    app.register_blueprint(blueprint=contact_bp.blueprint)
+    app.register_blueprint(blueprint=controller.blueprint)
     app.register_blueprint(blueprint=subscribe_bp.blueprint)
 
     # register Telegram bot
