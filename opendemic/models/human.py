@@ -7,7 +7,7 @@ from config.config import CONFIG, ENV, Environments, LOCAL
 from config.types import Symptoms
 from helpers.id import verify_uuid_regex
 from opendemic.database.sql_db import RDBManager
-from opendemic.channels.telegram import get_telegram_bot_instance, get_telegram_menu, make_reply_keyboard_markup
+from opendemic.blueprints.telegram_bp import get_telegram_bot_instance, get_telegram_menu, make_reply_keyboard_markup
 from helpers.formatting import quote_wrap, mysql_db_format_value
 import datetime
 import uuid
