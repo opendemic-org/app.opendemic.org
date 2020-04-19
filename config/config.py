@@ -2,6 +2,7 @@ import glob
 import os
 import copy
 from enum import Enum
+from logging import Logger
 from helpers.aws_secrets_manager import list_secrets, get_secret
 from configparser import ConfigParser, ExtendedInterpolation
 import logging.handlers
@@ -9,18 +10,17 @@ import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 
 
-
-# create environment Enum class
 class Environments(Enum):
 	DEFAULT = 'DEFAULT'
 	DEVELOPMENT = 'DEVELOPMENT'
 	PRODUCTION = 'PRODUCTION'
 
+
 # mute werkzeug logger
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 # create logger
-logger = logging.getLogger("Logger")
+logger: Logger = logging.getLogger("Logger")
 logger.setLevel(logging.DEBUG)
 # create console handler and set level to debug
 ch = logging.StreamHandler()
