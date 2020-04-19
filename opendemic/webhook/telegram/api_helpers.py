@@ -1,13 +1,12 @@
-from config.config import CONFIG, ENV, Environments, LOCAL
+from config.config import CONFIG, LOCAL, logger
 import time
 import os
-import telebot
-from telebot import types
+from telebot import types, TeleBot
+from werkzeug.local import LocalProxy
 
 
-def get_telegram_bot_instance():
-    bot = telebot.TeleBot(CONFIG.get('telegram-credentials-telegram-token'))
-    return bot
+def get_telegram_bot_instance() -> TeleBot:
+    return TeleBot(CONFIG.get('telegram-credentials-telegram-token'))
 
 
 def make_reply_keyboard_markup(markup_map: list, column_stacked: bool = True) -> types.InlineKeyboardMarkup:
@@ -43,24 +42,28 @@ def make_reply_keyboard_markup(markup_map: list, column_stacked: bool = True) ->
     return keyboard_markup
 
 
-def register_webhook_url():
+def register_webhook_url() -> bool:
     bot = get_telegram_bot_instance()
-    bot.remove_webhook()
-    time.sleep(0.1)
-    if LOCAL:
-        url = os.path.join(CONFIG.get('local-base-url'), "webhook/telegram", CONFIG.get('webhook_token'))
-    else:
-        url = os.path.join(CONFIG.get('base-url'), "webhook/telegram", CONFIG.get('webhook_token'))
-    if ENV == Environments.DEVELOPMENT.value:
-        print("Registering Telegram webhook: {}".format(url))
-    bot.set_webhook(url=url)
+    try:
+        bot.remove_webhook()
+        time.sleep(0.1)
+        if LOCAL:
+            url = os.path.join(CONFIG.get('local-base-url'), "webhook/telegram", CONFIG.get('webhook_token'))
+        else:
+            url = os.path.join(CONFIG.get('base-url'), "webhook/telegram", CONFIG.get('webhook_token'))
+        logger.info("[TELEGRAM WEBHOOK] registering webhook: {}".format(url))
+        bot.set_webhook(url=url)
+    except Exception as e:
+        logger.error(e)
+        return False
+    return True
 
 
-def get_webhook_update(request):
+def get_webhook_update(request: LocalProxy) -> types.Update:
     return types.Update.de_json(request.stream.read().decode("utf-8"))
 
 
-def get_telegram_menu():
+def get_telegram_menu() -> types.ReplyKeyboardMarkup:
     markup = types.ReplyKeyboardMarkup()
     report_location_btn = types.KeyboardButton('📍 Report Location', request_location=True)
     report_fever_btn = types.KeyboardButton('🤒 Report fever')

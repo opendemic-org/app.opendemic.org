@@ -47,19 +47,20 @@ def create_app():
     init(autoreset=True)
 
     # register routes
-    from opendemic.webhook.telegram import controller
-    from opendemic.contact import controller
+    import opendemic.webhook.telegram.controller as telegram_controller
+    from opendemic.contact import controller as contact_controller
+
     from opendemic.map import maps_bp
     from opendemic.human.symptom import symptom_bp
     from opendemic.human.subscription import subscribe_bp
     from opendemic.human.location import location_bp
     from opendemic.human.alert import alert_bp
-    app.register_blueprint(blueprint=controller.blueprint, url_prefix='/webhook')
+    app.register_blueprint(blueprint=telegram_controller.blueprint, url_prefix='/webhook')
     app.register_blueprint(blueprint=location_bp.blueprint, url_prefix='/human')
     app.register_blueprint(blueprint=symptom_bp.blueprint, url_prefix='/human')
     app.register_blueprint(blueprint=alert_bp.blueprint, url_prefix='/human')
     app.register_blueprint(blueprint=maps_bp.blueprint)
-    app.register_blueprint(blueprint=controller.blueprint)
+    app.register_blueprint(blueprint=contact_controller.blueprint)
     app.register_blueprint(blueprint=subscribe_bp.blueprint)
 
     # TODO - move Telegram webhook registration to worker
