@@ -9,7 +9,7 @@ from config.config import CONFIG
 from flask import Flask, Response
 from flask_cors import CORS
 from apscheduler.schedulers.background import BackgroundScheduler
-from opendemic.webhook.telegram.controller import register_webhook_url, get_telegram_menu, get_telegram_bot_instance
+from opendemic.webhook.telegram.api_helpers import register_webhook_url, get_telegram_menu, get_telegram_bot_instance
 from opendemic.database.sql_db import RDBManager
 from opendemic.human.human import Human
 import prometheus_client
