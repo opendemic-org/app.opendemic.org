@@ -13,11 +13,97 @@ from opendemic.channels.telegram import get_telegram_bot_instance, \
 from helpers.url import url_add_params, compose_client_url
 from opendemic.fulfillment.command import process_telegram_command
 from opendemic.fulfillment.intent import process_intent
-from opendemic.logging.action import log_action, log_sent_message
 from opendemic.models.human import Human
 from telebot import types
+from config.config import CONFIG, Environments, ENV
+from opendemic.database.sql_db import RDBManager
+import datetime
+from helpers.formatting import mysql_db_format_value
 
 blueprint = Blueprint('telegram_webhook', __name__)
+
+
+def log_action(
+	human_id: str,
+	from_human: bool,
+	action_type: str,
+	telegram_human_id: int = None,
+	action_value: str = None,
+	local_timestamp: datetime.datetime = None,
+	message_id: int = None,
+	elapsed_seconds: int = None,
+	tag: str = None
+):
+	# init db connection
+	rdb = RDBManager()
+	if ENV == Environments.DEVELOPMENT.value:
+		print("ACTION VALUE : {}".format(action_value))
+	try:
+		# run query
+		if human_id is not None:
+			_, row_count = rdb.execute(
+				sql_query="""
+						INSERT IGNORE
+						INTO `log` (
+							`human_id`, `from`, `to`, `action_type`, `action_value`, 
+							`created`, `message_id`, `telegram_human_id`)
+						VALUES ({}, {}, {}, {}, {}, UTC_TIMESTAMP(), {}, {})
+						""".format(
+					mysql_db_format_value(value=human_id),
+					mysql_db_format_value(value="human" if from_human else "bot"),
+					mysql_db_format_value(value="bot" if from_human else "human"),
+					mysql_db_format_value(value=action_type),
+					mysql_db_format_value(value=action_value),
+					mysql_db_format_value(value=message_id),
+					mysql_db_format_value(value=telegram_human_id)
+				)
+			)
+	except Exception as e:
+		if ENV == Environments.DEVELOPMENT.value:
+			print(e)
+
+
+def log_sent_message(payload: dict, human_id: str = None, tag: str = None):
+	# parse payload components
+	content_type = 'unknown'
+	message_id = None
+	telegram_human_id = None
+	telegram_message_timestamp = datetime.datetime.now()
+	message_text = None
+	try:
+		content_type = payload.content_type
+	except AttributeError as e:
+		pass
+	try:
+		message_id = int(payload.message_id)
+	except AttributeError as e:
+		pass
+	try:
+		telegram_human_id = int(payload.chat.id)
+	except AttributeError as e:
+		pass
+	try:
+		telegram_message_timestamp = datetime.datetime.fromtimestamp(payload.date)
+	except AttributeError as e:
+		pass
+	try:
+		message_text = payload.text
+	except AttributeError as e:
+		pass
+
+	# log message
+	log_action(
+		human_id=human_id,
+		telegram_human_id=telegram_human_id,
+		from_human=False,
+		action_type="SENT_CONTENT["+content_type+"]",
+		action_value=message_text,
+		local_timestamp=telegram_message_timestamp,
+		message_id=message_id,
+		tag=tag
+	)
+
+	return message_id
 
 
 @blueprint.route('/telegram/<string:token>', methods=['POST'])
