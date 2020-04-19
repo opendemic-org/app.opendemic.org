@@ -5,173 +5,38 @@ from colorama import init
 from colorama import Fore
 from flask import g, request
 from rfc3339 import rfc3339
-from config.config import CONFIG
+from config.config import CONFIG, logger
 from flask import Flask, Response
 from flask_cors import CORS
-from apscheduler.schedulers.background import BackgroundScheduler
 from opendemic.webhook.telegram.api_helpers import register_webhook_url, get_telegram_menu, get_telegram_bot_instance
 from opendemic.database import RDBManager
 from opendemic.human.human import Human
+from opendemic.scheduler import create_scheduler
 import prometheus_client
 
 
 CONTENT_TYPE_LATEST = str('text/plain; version=0.0.4; charset=utf-8')
 REQUEST_COUNT = prometheus_client.Counter(
-        'request_count', 'App Request Count',
-        ['app_name', 'method', 'endpoint', 'http_status']
-    )
-REQUEST_LATENCY = prometheus_client.Histogram('request_latency_seconds', 'Request latency',
-                                ['app_name', 'endpoint'])
-
-
-def send_reminders(hours_of_day: list):
-    audience = Human.get_all_humans_for_telegram_notifications(hours_of_day=hours_of_day)
-
-    # create bot
-    bot = get_telegram_bot_instance()
-
-    # send to audience
-    notify_admin = True
-    count = 0
-    for member in audience:
-        try:
-            bot.send_message(
-                chat_id=member['telegram_human_id'],
-                text="👇 Remember to report your location (always) and symptoms (if any) 👇",
-                reply_markup=get_telegram_menu()
-            )
-
-        except Exception as e:
-            if notify_admin:
-                bot.send_message(
-                    chat_id=int(CONFIG.get('telegram-credentials-telegram-admin-id')),
-                    text="[ADMIN] `send_reminders` exception : {}".format(e)
-                )
-                notify_admin = False
-            # try to unsubscribe
-            try:
-                human = Human(human_id=member['id'])
-                human.unsubscribe()
-            except Exception as unsb_e:
-                pass
-        else:
-            count += 1
-
-    # alert admin
-    bot.send_message(
-        chat_id=int(CONFIG.get('telegram-credentials-telegram-admin-id')),
-        text="[ADMIN] Sent reminder to {}/{} humans.".format(count, len(audience))
-    )
-
-
-def send_daily_report(hours_of_day: list):
-    audience = Human.get_all_humans_for_telegram_notifications(hours_of_day=hours_of_day)
-
-    # create bot
-    bot = get_telegram_bot_instance()
-    # send to audience
-    notify_admin = True
-    count = 0
-    for member in audience:
-        try:
-            human = Human(human_id=member['id'])
-
-            # get most recent coordinates
-            most_recent_location = human.get_most_recent_location()
-            if most_recent_location is None:
-                return "NOTHING TO SHOW. SHARE YOUR LOCATION FIRST."
-            lat, lng = most_recent_location
-            human.send_proximity_alert(lat=lat, lng=lng)
-            count += 1
-
-        except Exception as e:
-            if notify_admin:
-                bot.send_message(
-                    chat_id=int(CONFIG.get('telegram-credentials-telegram-admin-id')),
-                    text="[ADMIN] `send_daily_report` exception : {}".format(e)
-                )
-                notify_admin = False
-
-    # alert admin
-    bot.send_message(
-        chat_id=int(CONFIG.get('telegram-credentials-telegram-admin-id')),
-        text="[ADMIN] Sent proximity report to {}/{} humans.".format(count, len(audience))
-    )
-
-
-def send_feedback_request(hours_of_day: list):
-    audience = Human.get_all_humans_for_telegram_notifications(hours_of_day=hours_of_day)
-
-    # create bot
-    bot = get_telegram_bot_instance()
-
-    # send to audience
-    notify_admin = True
-    count = 0
-    for member in audience:
-        try:
-            bot.send_message(
-                chat_id=member['telegram_human_id'],
-                text="*[🤙 Feedback Request]* Please share your feedback on the product by clicking here: @OpendemicTeam",
-                parse_mode='markdown',
-                reply_markup=get_telegram_menu()
-            )
-        except Exception as e:
-            if notify_admin:
-                bot.send_message(
-                    chat_id=int(CONFIG.get('telegram-credentials-telegram-admin-id')),
-                    text="[ADMIN] `send_feedback_request` exception : {}".format(e)
-                )
-                notify_admin = False
-            # try to unsubscribe
-            try:
-                human = Human(human_id=member['id'])
-                human.unsubscribe()
-            except Exception as unsb_e:
-                pass
-        else:
-            count += 1
-
-    # alert admin
-    bot.send_message(
-        chat_id=int(CONFIG.get('telegram-credentials-telegram-admin-id')),
-        text="[ADMIN] Sent feedback request to {}/{} humans.".format(count, len(audience))
-    )
+    'request_count', 'App Request Count', ['app_name', 'method', 'endpoint', 'http_status']
+)
+REQUEST_LATENCY = prometheus_client.Histogram('request_latency_seconds', 'Request latency', ['app_name', 'endpoint'])
 
 
 def create_worker():
-    # create and configure the app
     worker = Flask(__name__, instance_relative_config=True)
 
-    # declare scheduler
-    scheduler = BackgroundScheduler({'apscheduler.timezone': 'UTC'})
+    # start background scheduler
+    background_scheduler = create_scheduler()
+    background_scheduler.start()
 
-    # add jobs
-    scheduler.add_job(send_reminders, 'cron', args=[[8, 20]], day='*', hour='*/2', minute='0')
-    scheduler.add_job(send_daily_report, 'cron', args=[[8]], day='*', hour='*/2', minute='0')
-    scheduler.add_job(send_feedback_request, 'cron', args=[[10]], day='*/2', hour='*/2', minute='0')
-
-    # start scheduler
-    scheduler.start()
-
-    # index endpoint
     @worker.route('/')
     def index():
-        response = Response(
-            response=json.dumps({
-                "success": True
-            }),
-            status=200,
-            mimetype='application/json'
-        )
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response
+        return "success", 200
 
     return worker
 
 
 def create_app():
-    # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
         SECRET_KEY=CONFIG.get("app-secret-key-value")
@@ -181,7 +46,7 @@ def create_app():
     cors = CORS(app)
     init(autoreset=True)
 
-    # register blueprints
+    # register routes
     from opendemic.webhook.telegram import controller
     from opendemic.contact import controller
     from opendemic.map import maps_bp
@@ -197,11 +62,11 @@ def create_app():
     app.register_blueprint(blueprint=controller.blueprint)
     app.register_blueprint(blueprint=subscribe_bp.blueprint)
 
-    # register Telegram bot
+    # TODO - move Telegram webhook registration to worker
     try:
         register_webhook_url()
     except Exception as exception:
-        print("An exception occurred while registering the telegram webhook: ", exception)
+        logger.error("An exception occurred while registering the telegram webhook: ", exception)
 
     @app.before_request
     def start_timer():
@@ -251,15 +116,7 @@ def create_app():
 
     @app.route('/')
     def index():
-        response = Response(
-            response=json.dumps({
-                "success": True
-            }),
-            status=200,
-            mimetype='application/json'
-        )
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response
+        return "success", 200
 
     @app.route('/debug-sentry')
     def trigger_error():
