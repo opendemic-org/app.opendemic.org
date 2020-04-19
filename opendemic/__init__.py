@@ -258,12 +258,6 @@ def create_app():
     def trigger_error():
         division_by_zero = 1 / 0
 
-    @app.route('/privacy')
-    def privacy():
-        return render_template(
-            template_name_or_list="privacy.html"
-        )
-
     @app.route('/metrics/')
     def metrics():
         return Response(prometheus_client.generate_latest(), mimetype=CONTENT_TYPE_LATEST)
