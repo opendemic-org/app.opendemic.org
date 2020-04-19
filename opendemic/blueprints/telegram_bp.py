@@ -1,26 +1,17 @@
 from config.config import CONFIG, ENV, Environments
-from config.types import TelegramBotCommand
+from config.types import TelegramBotCommand, Symptoms
 import time
 import os
 import random
-import datetime
-from flask import (
-	Blueprint, request, abort, url_for
-)
+from flask import Blueprint, request, abort
 from opendemic.channels.telegram import get_telegram_bot_instance, \
     make_reply_keyboard_markup, TelegramCommand, \
     get_webhook_update, get_telegram_menu
-from helpers.url import url_add_params, compose_client_url
-from opendemic.fulfillment.command import process_telegram_command
 from opendemic.database.sql_db import RDBManager
 import datetime
 from helpers.formatting import mysql_db_format_value
-from config.config import CONFIG, ENV, Environments, LOCAL
-from config.types import TelegramBotCommand, Symptoms
-import os
-from opendemic.channels.telegram import get_telegram_bot_instance
-from opendemic.channels.telegram import make_reply_keyboard_markup
 from opendemic.models.human import Human
+from config.config import CONFIG, ENV, Environments, LOCAL
 
 blueprint = Blueprint('telegram_webhook', __name__)
 
@@ -231,6 +222,89 @@ def process_intent(
 		return True
 
 	return False
+
+
+def process_telegram_command(
+		telegram_command: TelegramCommand,
+		human_id: str,
+		telegram_human_id: int
+):
+	# validate type
+	if not isinstance(telegram_command, TelegramCommand):
+		raise TypeError("Expected `telegram_command` to be of type TelegramCommand. Got {}".format(
+			type(telegram_command)
+		))
+
+	# initialize bot
+	bot = get_telegram_bot_instance()
+
+	# is valid command
+	if not TelegramBotCommand.has_value(telegram_command.command):
+		# invalid command
+		log_sent_message(bot.send_message(
+			chat_id=telegram_human_id,
+			text="Oops... This command is not valid. Type `/` to see valid commands.",
+			reply_markup=get_telegram_menu()
+		), human_id=human_id)
+
+	# ------------------------------------------------------------------------------------------------------------------
+	# start command
+	# ------------------------------------------------------------------------------------------------------------------
+	elif telegram_command.command == TelegramBotCommand.START.value:
+		log_sent_message(bot.send_message(
+			chat_id=telegram_human_id,
+			text="Welcome back!",
+			reply_markup=get_telegram_menu()
+		), human_id=human_id)
+
+	# ------------------------------------------------------------------------------------------------------------------
+	# help command
+	# ------------------------------------------------------------------------------------------------------------------
+	elif telegram_command.command == TelegramBotCommand.HELP.value:
+		log_sent_message(bot.send_message(
+			chat_id=telegram_human_id,
+			text="Click here to talk to us: @OpendemicTeam",
+			reply_markup=get_telegram_menu()
+		), human_id=human_id)
+
+	# ------------------------------------------------------------------------------------------------------------------
+	# report command
+	# ------------------------------------------------------------------------------------------------------------------
+	elif telegram_command.command == TelegramBotCommand.REPORT.value:
+		# case existing user
+		if human_id is not None:
+			# get human
+			human = Human(human_id=human_id)
+
+			# send message
+			log_sent_message(bot.send_message(
+				chat_id=telegram_human_id,
+				text="See options below 👇",
+				reply_markup=get_telegram_menu()
+			), human_id=human_id)
+
+	# ------------------------------------------------------------------------------------------------------------------
+	# my map command
+	# ------------------------------------------------------------------------------------------------------------------
+	elif telegram_command.command == TelegramBotCommand.MY_MAP.value:
+		# case existing user
+		if human_id is not None:
+			# get human
+			human = Human(human_id=human_id)
+
+			# send message
+			if LOCAL:
+				map_url = os.path.join(CONFIG.get('local-base-url'), "map", human.id)
+			else:
+				map_url = os.path.join(CONFIG.get('base-url'), "map", human.id)
+			bot.send_message(
+				chat_id=human.telegram_human_id,
+				text="See who's around you 👇",
+				parse_mode='markdown',
+				reply_markup=make_reply_keyboard_markup(markup_map=[
+					{'text': "🌍 See Map", 'url': map_url},
+				])
+			)
 
 
 @blueprint.route('/telegram/<string:token>', methods=['POST'])
