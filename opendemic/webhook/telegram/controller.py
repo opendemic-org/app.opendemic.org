@@ -1,12 +1,12 @@
 import time
 import os
 import random
-from config.config import CONFIG, ENV, Environments, LOCAL, logger
+from config.config import CONFIG, LOCAL, logger
 from config.types import TelegramBotCommand, Symptoms
 from telebot.types import Update
 from flask import Blueprint, request, abort
 import datetime
-from opendemic.webhook.log.model import log_action, log_sent_message
+from opendemic.webhook.telegram.model import log_action, log_sent_message
 from opendemic.human.human import Human
 from opendemic.webhook.telegram.api_helpers import get_telegram_menu, get_telegram_bot_instance, \
     get_webhook_update, make_reply_keyboard_markup
