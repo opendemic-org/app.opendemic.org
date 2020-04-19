@@ -9,7 +9,7 @@ from config.config import CONFIG
 from flask import Flask, Response
 from flask_cors import CORS
 from apscheduler.schedulers.background import BackgroundScheduler
-from opendemic.controllers.telegram_bp import register_webhook_url, get_telegram_menu, get_telegram_bot_instance
+from opendemic.webhook.telegram.telegram_bp import register_webhook_url, get_telegram_menu, get_telegram_bot_instance
 from opendemic.database.sql_db import RDBManager
 from opendemic.human.human import Human
 import prometheus_client
@@ -182,7 +182,9 @@ def create_app():
     init(autoreset=True)
 
     # register blueprints
-    from .controllers import telegram_bp, maps_bp, contact_bp
+    from opendemic.webhook.telegram import telegram_bp
+    from opendemic.contact import contact_bp
+    from opendemic.map import maps_bp
     from opendemic.human.symptom import symptom_bp
     from opendemic.human.subscription import subscribe_bp
     from opendemic.human.location import location_bp

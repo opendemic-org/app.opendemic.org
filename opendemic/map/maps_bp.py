@@ -54,13 +54,13 @@ def local_map(human_id):
 		})
 
 	return render_template('map.html',
-		self_geojson_feature=self_geojson_feature,
-		self_lat_lng=self_lat_lng,
-		risky_humans_geojson=risky_humans_geojson,
-		km_radius=int(CONFIG.get('km_radius')),
-		include_legend=True,
-		zoom_level=9
-	)
+						   self_geojson_feature=self_geojson_feature,
+						   self_lat_lng=self_lat_lng,
+						   risky_humans_geojson=risky_humans_geojson,
+						   km_radius=int(CONFIG.get('km_radius')),
+						   include_legend=True,
+						   zoom_level=9
+						   )
 
 
 @blueprint.route('/global/<string:token>', methods=['GET'])
