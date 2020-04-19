@@ -1,6 +1,6 @@
 from config.config import CONFIG, ENV, Environments
 from flask import Blueprint, Response, render_template, abort, request
-from opendemic.models.human import Human
+from opendemic.human.human import Human
 import json
 
 blueprint = Blueprint('maps', __name__)

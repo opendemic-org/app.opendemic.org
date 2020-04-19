@@ -1,10 +1,9 @@
 from config.config import CONFIG, ENV, Environments
-from flask import Blueprint, Response, render_template, abort, request
-from opendemic.models.human import Human
-from opendemic.models.geo import Coordinate
+from flask import Blueprint, Response, render_template, request
+from opendemic.human.human import Human
+from opendemic.human.location.geo import Coordinate
 import json
 from enum import Enum
-import math
 
 blueprint = Blueprint('location', __name__)
 
@@ -138,10 +137,10 @@ def location():
 		}
 
 		return render_template('map.html',
-			self_geojson_feature=self_geojson_feature,
-			self_lat_lng=self_lat_lng,
-			risky_humans_geojson=risky_humans_geojson,
-			km_radius=int(CONFIG.get('km_radius')),
-			include_legend=params[LocationResourceFields.INCLUDE_LEGEND.value],
-			zoom_level=9
-		)
+							   self_geojson_feature=self_geojson_feature,
+							   self_lat_lng=self_lat_lng,
+							   risky_humans_geojson=risky_humans_geojson,
+							   km_radius=int(CONFIG.get('km_radius')),
+							   include_legend=params[LocationResourceFields.INCLUDE_LEGEND.value],
+							   zoom_level=9
+							   )

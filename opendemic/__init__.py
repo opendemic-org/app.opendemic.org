@@ -2,16 +2,16 @@ import json
 import datetime
 import time
 from colorama import init
-from colorama import Fore, Style
+from colorama import Fore
 from flask import g, request
 from rfc3339 import rfc3339
 from config.config import CONFIG
-from flask import Flask, Response, render_template, abort
+from flask import Flask, Response
 from flask_cors import CORS
 from apscheduler.schedulers.background import BackgroundScheduler
 from opendemic.controllers.telegram_bp import register_webhook_url, get_telegram_menu, get_telegram_bot_instance
 from opendemic.database.sql_db import RDBManager
-from opendemic.models.human import Human
+from opendemic.human.human import Human
 import prometheus_client
 
 
@@ -182,7 +182,11 @@ def create_app():
     init(autoreset=True)
 
     # register blueprints
-    from .controllers import telegram_bp, maps_bp, location_bp, symptom_bp, contact_bp, subscribe_bp, alert_bp
+    from .controllers import telegram_bp, maps_bp, contact_bp
+    from opendemic.human.symptom import symptom_bp
+    from opendemic.human.subscription import subscribe_bp
+    from opendemic.human.location import location_bp
+    from opendemic.human.alert import alert_bp
     app.register_blueprint(blueprint=telegram_bp.blueprint, url_prefix='/webhook')
     app.register_blueprint(blueprint=location_bp.blueprint, url_prefix='/human')
     app.register_blueprint(blueprint=symptom_bp.blueprint, url_prefix='/human')

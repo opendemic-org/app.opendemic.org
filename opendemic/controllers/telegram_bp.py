@@ -7,7 +7,7 @@ from flask import Blueprint, request, abort
 from opendemic.database.sql_db import RDBManager
 import datetime
 from helpers.formatting import mysql_db_format_value
-from opendemic.models.human import Human
+from opendemic.human.human import Human
 import telebot
 from telebot import types
 import re
