@@ -1,5 +1,5 @@
 from flask import Blueprint, Response, request
-from opendemic.human.human import Human
+from opendemic.human.model import Human
 from opendemic.human.location.geo import Coordinate
 import json
 from enum import Enum

@@ -1,7 +1,7 @@
 from config.config import ENV, Environments
 from config.types import Symptoms
 from flask import Blueprint, Response, abort, request
-from opendemic.human.human import Human
+from opendemic.human.model import Human
 import json
 from opendemic.human.location.geo import Coordinate
 from enum import Enum

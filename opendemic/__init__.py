@@ -10,7 +10,7 @@ from flask import Flask, Response
 from flask_cors import CORS
 from opendemic.webhook.telegram.api_helpers import register_webhook_url, get_telegram_menu, get_telegram_bot_instance
 from opendemic.database import RDBManager
-from opendemic.human.human import Human
+from opendemic.human.model import Human
 from opendemic.scheduler import create_scheduler
 import prometheus_client
 

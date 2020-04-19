@@ -1,7 +1,7 @@
 from config.config import CONFIG
 from apscheduler.schedulers.background import BackgroundScheduler
 from opendemic.webhook.telegram.api_helpers import get_telegram_menu, get_telegram_bot_instance
-from opendemic.human.human import Human
+from opendemic.human.model import Human
 
 
 def send_reminders(hours_of_day: list):

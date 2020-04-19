@@ -1,5 +1,5 @@
 from config.config import CONFIG
-from opendemic.human.human import Human
+from opendemic.human.model import Human
 
 
 def get_risky_humans_geojson(

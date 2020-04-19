@@ -1,6 +1,6 @@
 from config.config import CONFIG, logger
 from flask import Blueprint, render_template, abort, request
-from opendemic.human.human import Human
+from opendemic.human.model import Human
 from opendemic.map.model import get_risky_humans_geojson
 
 blueprint = Blueprint('maps', __name__)

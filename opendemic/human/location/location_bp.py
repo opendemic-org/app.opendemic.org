@@ -1,6 +1,6 @@
 from config.config import CONFIG, ENV, Environments
 from flask import Blueprint, Response, render_template, request
-from opendemic.human.human import Human
+from opendemic.human.model import Human
 from opendemic.human.location.geo import Coordinate
 import json
 from enum import Enum
