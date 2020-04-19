@@ -4,7 +4,7 @@ from config.types import TelegramBotCommand
 from opendemic.channels.telegram import TelegramCommand, get_telegram_bot_instance, \
 	make_reply_keyboard_markup, get_telegram_menu
 from telebot import types
-from opendemic.controllers.human import Human
+from opendemic.models.human import Human
 from opendemic.logging.action import log_sent_message, log_action
 from helpers.url import url_add_params, compose_client_url
 import random

@@ -14,7 +14,7 @@ from helpers.url import url_add_params, compose_client_url
 from opendemic.fulfillment.command import process_telegram_command
 from opendemic.fulfillment.intent import process_intent
 from opendemic.logging.action import log_action, log_sent_message
-from opendemic.controllers.human import Human
+from opendemic.models.human import Human
 from telebot import types
 
 blueprint = Blueprint('telegram_webhook', __name__)

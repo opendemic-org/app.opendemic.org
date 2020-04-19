@@ -4,7 +4,7 @@ import os
 from opendemic.channels.telegram import get_telegram_bot_instance
 from opendemic.channels.telegram import make_reply_keyboard_markup
 from opendemic.logging.action import log_sent_message, log_action
-from opendemic.controllers.human import Human
+from opendemic.models.human import Human
 from flask import url_for
 from helpers.url import url_add_params, compose_client_url
 

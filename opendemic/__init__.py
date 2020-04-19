@@ -11,7 +11,7 @@ from flask_cors import CORS
 from apscheduler.schedulers.background import BackgroundScheduler
 from opendemic.channels.telegram import register_webhook_url, get_telegram_menu, get_telegram_bot_instance
 from opendemic.database.sql_db import RDBManager
-from opendemic.controllers.human import Human
+from opendemic.models.human import Human
 import prometheus_client
 
 
@@ -22,6 +22,7 @@ REQUEST_COUNT = prometheus_client.Counter(
     )
 REQUEST_LATENCY = prometheus_client.Histogram('request_latency_seconds', 'Request latency',
                                 ['app_name', 'endpoint'])
+
 
 def send_reminders(hours_of_day: list):
     audience = Human.get_all_humans_for_telegram_notifications(hours_of_day=hours_of_day)

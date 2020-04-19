@@ -1,9 +1,9 @@
 from config.config import CONFIG, ENV, Environments
 from config.types import Symptoms
 from flask import Blueprint, Response, render_template, abort, request
-from opendemic.controllers.human import Human
+from opendemic.models.human import Human
 import json
-from opendemic.controllers.geo import Coordinate
+from opendemic.models.geo import Coordinate
 from enum import Enum
 
 blueprint = Blueprint('symptom', __name__)
