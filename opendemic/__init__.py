@@ -176,6 +176,7 @@ def create_app():
     app.config.from_mapping(
         SECRET_KEY=CONFIG.get("app-secret-key-value")
     )
+
     # add CORS
     cors = CORS(app)
     init(autoreset=True)
@@ -241,7 +242,7 @@ def create_app():
         app.logger.info(line)
 
         return response
-    # index endpoint
+
     @app.route('/')
     def index():
         response = Response(
@@ -263,30 +264,17 @@ def create_app():
         return Response(prometheus_client.generate_latest(), mimetype=CONTENT_TYPE_LATEST)
     return app
 
-    # create Gauss function - TODO move to migration
+    # TODO move gauss function to migration
     rdb = RDBManager()
-
-    # store rand gaussian procedure
-    pre_sql_query_1 = """
-    				DROP FUNCTION IF EXISTS gauss;
-    		"""
-    pre_sql_query_2 = """
-    				CREATE FUNCTION gauss(mean float, stdev float) RETURNS float
-    				BEGIN
-    				set @x=rand(), @y=rand();
-    				set @gaus = ((sqrt(-2*log(@x))*cos(2*pi()*@y))*stdev)+mean;
-    				return @gaus;
-    				END;
-    		"""
-    rdb.pre_execute(sql_query=pre_sql_query_1)
-    rdb.pre_execute(sql_query=pre_sql_query_2)
+    rdb.pre_execute(sql_query="DROP FUNCTION IF EXISTS gauss;")
+    rdb.pre_execute(sql_query="""
+        CREATE FUNCTION gauss(mean float, stdev float) RETURNS float
+        BEGIN
+        set @x=rand(), @y=rand();
+        set @gaus = ((sqrt(-2*log(@x))*cos(2*pi()*@y))*stdev)+mean;
+        return @gaus;
+        END;
+    """)
+    del rdb
 
     return app
-
-
-def generate_db_uri():
-    return 'mysql://' + CONFIG.get('rds-aurora-mysql-opendemic-username') + ':' + \
-                        CONFIG.get('rds-aurora-mysql-opendemic-password') + '@' + \
-                        CONFIG.get('rds-aurora-mysql-opendemic-host') + ':' + \
-                        CONFIG.get('rds-aurora-mysql-opendemic-port') + '/' +\
-                        CONFIG.get('rds-aurora-mysql-opendemic-database')
