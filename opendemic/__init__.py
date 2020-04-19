@@ -49,8 +49,8 @@ def create_app():
     # register routes
     import opendemic.webhook.telegram.controller as telegram_controller
     from opendemic.contact import controller as contact_controller
+    from opendemic.map import controller as map_controller
 
-    from opendemic.map import maps_bp
     from opendemic.human.symptom import symptom_bp
     from opendemic.human.subscription import subscribe_bp
     from opendemic.human.location import location_bp
@@ -59,7 +59,7 @@ def create_app():
     app.register_blueprint(blueprint=location_bp.blueprint, url_prefix='/human')
     app.register_blueprint(blueprint=symptom_bp.blueprint, url_prefix='/human')
     app.register_blueprint(blueprint=alert_bp.blueprint, url_prefix='/human')
-    app.register_blueprint(blueprint=maps_bp.blueprint)
+    app.register_blueprint(blueprint=map_controller.blueprint)
     app.register_blueprint(blueprint=contact_controller.blueprint)
     app.register_blueprint(blueprint=subscribe_bp.blueprint)
 
