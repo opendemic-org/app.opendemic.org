@@ -1,7 +1,7 @@
 from config.config import CONFIG, ENV, Environments
 from flask import Blueprint, Response, render_template, abort, request
 from enum import Enum
-from opendemic.database.sql_db import RDBManager
+from opendemic.database import RDBManager
 from helpers.formatting import mysql_db_format_value, quote_wrap
 import uuid
 

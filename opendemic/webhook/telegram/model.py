@@ -1,5 +1,5 @@
 from config.config import logger
-from opendemic.database.sql_db import RDBManager
+from opendemic.database import RDBManager
 import datetime
 from helpers.formatting import mysql_db_format_value
 import re
