@@ -2,6 +2,7 @@ from config.config import CONFIG, logger
 from flask import Blueprint, render_template, abort, request
 from opendemic.human.model import Human
 from opendemic.map.model import get_risky_humans_geojson
+DEFAULT_LAT, DEFAULT_LNG = -73.966912, 40.715857
 
 blueprint = Blueprint('maps', __name__)
 
@@ -45,21 +46,18 @@ def global_map(token):
 	if token != CONFIG.get('global-map-token'):
 		abort(403)
 
-	data = dict()
-	data['lat'] = request.args.get('lat')
-	data['lng'] = request.args.get('lng')
+	lat = request.args.get('lat')
+	lng = request.args.get('lng')
 
-	if data['lat'] is not None and data['lng'] is not None:
-		self_lat_lng = [data['lng'], data['lat']]
-	else:
-		self_lat_lng = [-73.966912, 40.715857]
+	if lat is None or lng is None:
+		lat, lng = DEFAULT_LAT, DEFAULT_LNG
 
-	risky_humans_geojson = get_risky_humans_geojson(lat=data['lat'], lng=data['lng'])
+	risky_humans_geojson = get_risky_humans_geojson(lat=lat, lng=lng)
 
 	return render_template(
 		'map.html',
 		self_geojson_feature=None,
-		self_lat_lng=self_lat_lng,
+		self_lat_lng=[lng, lat],
 		risky_humans_geojson=risky_humans_geojson,
 		km_radius=0,
 		include_legend=True,
