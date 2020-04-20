@@ -1,5 +1,20 @@
 from config.config import CONFIG
 from opendemic.human.model import Human
+from enum import Enum
+
+
+class CoordinateType(Enum):
+	LATITUDE = 'lat'
+	LONGITUDE = 'lng'
+
+	@classmethod
+	def value_to_member_name(cls, value):
+		if cls.has_value(value):
+			return cls._value2member_map_[value].name
+
+	@classmethod
+	def has_value(cls, value):
+		return value in cls._value2member_map_
 
 
 def get_risky_humans_geojson(
@@ -30,7 +45,10 @@ def get_risky_humans_geojson(
 			},
 			'geometry': {
 				'type': 'Point',
-				'coordinates': [float(risky_human['longitude']), float(risky_human['latitude'])]
+				'coordinates': [
+					float(risky_human[CoordinateType.LONGITUDE.value]),
+					float(risky_human[CoordinateType.LATITUDE.value])
+				]
 			}
 		})
 

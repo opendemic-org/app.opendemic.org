@@ -8,6 +8,7 @@ from config.types import Symptoms
 from helpers.id import verify_uuid_regex
 from opendemic.database import RDBManager
 from opendemic.webhook.telegram.api_helpers import get_telegram_bot_instance, make_reply_keyboard_markup
+from opendemic.map.model import CoordinateType
 from helpers.formatting import quote_wrap, mysql_db_format_value
 import datetime
 import uuid
@@ -283,6 +284,9 @@ class Human(object):
 
 		return None
 
+	# ------------------------------------------------------------------------------------------------------------------
+	# TODO - clean up static method and create separate functions
+	# ------------------------------------------------------------------------------------------------------------------
 	@staticmethod
 	def get_risky_humans(lat: float, lng: float, days_window: int, km_radius: int = None):
 		# get DB
@@ -294,11 +298,11 @@ class Human(object):
 					CASE
 						WHEN agg.`risk_level` = 5 THEN round(agg.`latitude` + gauss(0,0.002), 5)
 						ELSE round(agg.`latitude` + gauss(0,0.001), 5)
-					 END AS 'latitude',
+					 END AS {},
 					 CASE
 						WHEN agg.`risk_level` = 5 THEN round(agg.`longitude` + gauss(0,0.002), 5)
 						ELSE round(agg.`longitude` + gauss(0,0.001), 5)
-					 END AS 'longitude',
+					 END AS {},
 					CASE
 						WHEN agg.`risk_level` > 1 THEN agg.`risk_level`
 						ELSE COUNT(DISTINCT(agg.`symptom`))
@@ -348,6 +352,8 @@ class Human(object):
 					agg.`longitude`,
 					agg.`risk_level`;
 									""".format(
+			mysql_db_format_value(CoordinateType.LATITUDE.value),
+			mysql_db_format_value(CoordinateType.LONGITUDE.value),
 			mysql_db_format_value(value=lat),
 			mysql_db_format_value(value=lng),
 			mysql_db_format_value(value=lat),
@@ -522,5 +528,5 @@ class Human(object):
 			return True, human_id_search_results[0]
 		else:
 			return False, None
-
+	# ------------------------------------------------------------------------------------------------------------------
 
