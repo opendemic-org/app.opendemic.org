@@ -30,7 +30,6 @@ class RDBManager(object):
 		try:
 			with self.connection.cursor() as cursor:
 				cursor.execute(sql_query)
-				row_count = cursor.rowcount
 				self.connection.commit()
 		except BaseException as e:
 			logger.error(e)
@@ -44,7 +43,6 @@ class RDBManager(object):
 		try:
 			with self.connection.cursor() as cursor:
 				cursor.execute(sql_query)
-				row_count = cursor.rowcount
 				result = cursor.fetchall()
 				QUERY_DURATION.labels('opendemic', sql_query).observe(round(time() - starting_time, 2))
 				self.connection.commit()
