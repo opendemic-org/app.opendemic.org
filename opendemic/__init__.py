@@ -130,8 +130,8 @@ def create_app():
 
     # TODO move gauss function to migration
     rdb = RDBManager()
-    rdb.pre_execute(sql_query="DROP FUNCTION IF EXISTS gauss;")
-    rdb.pre_execute(sql_query="""
+    err_drop_gauss_function = rdb.pre_execute(sql_query="DROP FUNCTION IF EXISTS gauss;")
+    err_create_gauss_function = rdb.pre_execute(sql_query="""
         CREATE FUNCTION gauss(mean float, stdev float) RETURNS float
         BEGIN
         set @x=rand(), @y=rand();

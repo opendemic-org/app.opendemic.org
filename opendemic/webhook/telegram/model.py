@@ -54,7 +54,7 @@ def log_action(
     logger.debug("[TELEGRAM LOG] {} : {}".format(action_type, action_value))
     try:
         if human_id is not None:
-            _, row_count = rdb.execute(
+            _, err = rdb.execute(
                 sql_query="""
                         INSERT IGNORE
                         INTO `log` (

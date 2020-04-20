@@ -1,4 +1,4 @@
-from config.config import CONFIG, ENV, Environments
+from config.config import CONFIG, ENV, Environments, logger
 from flask import Blueprint, Response, render_template, abort, request
 from enum import Enum
 from opendemic.database import RDBManager
@@ -44,7 +44,7 @@ def subscribe():
 
 		# check if contact exists
 		try:
-			existing_contact, _ = rdb.execute(
+			existing_contact, err = rdb.execute(
 				sql_query="""
 					SELECT `id`
 					FROM `contact`
@@ -59,8 +59,7 @@ def subscribe():
 				)
 			)
 		except Exception as e:
-			if ENV == Environments.DEVELOPMENT.value:
-				print(e)
+			logger.error(e)
 			return "An error occurred while processing your registration. Please try again.", 200
 		else:
 			if len(existing_contact) == 1 and 'id' in existing_contact[0]:
@@ -68,7 +67,7 @@ def subscribe():
 
 				# update existing contact
 				try:
-					_, updated_records = rdb.execute(
+					_, err = rdb.execute(
 						sql_query="""
 							UPDATE `contact`
 							SET
@@ -85,14 +84,13 @@ def subscribe():
 						)
 					)
 				except Exception as e:
-					if ENV == Environments.DEVELOPMENT.value:
-						print(e)
+					logger.error(e)
 			else:
 				# create contact_id
 				contact_id = str(uuid.uuid4())
 
 				# register contact information
-				_, records_affected = rdb.execute(
+				_, err = rdb.execute(
 					sql_query="""
 						INSERT IGNORE INTO `contact` (`id`, `phone_number`, `email`)
 						VALUES

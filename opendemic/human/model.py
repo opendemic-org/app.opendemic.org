@@ -3,7 +3,7 @@ import os
 os.environ['FLASK_ENV'] = 'production'
 os.environ['LOCAL'] = '0'
 """
-from config.config import CONFIG, ENV, Environments, LOCAL
+from config.config import CONFIG, ENV, Environments, LOCAL, logger
 from config.types import Symptoms
 from helpers.id import verify_uuid_regex
 from opendemic.database import RDBManager
@@ -60,7 +60,7 @@ class Human(object):
 	def unsubscribe(self):
 		rdb = RDBManager()
 		try:
-			_, records_affected = rdb.execute(
+			_, err = rdb.execute(
 				sql_query="""
 					UPDATE `humans`
 					SET
@@ -72,13 +72,12 @@ class Human(object):
 				)
 			)
 		except Exception as e:
-			if ENV == Environments.DEVELOPMENT.value:
-				print(e)
+			logger.error(e)
 
 	def get_human_attribute(self, attribute_name: str):
 		# validate `human_id` existence
 		rdb = RDBManager()
-		human_id_search_results, _ = rdb.execute(
+		human_id_search_results, err = rdb.execute(
 			sql_query="""
 				SELECT *
 				FROM `humans`
@@ -102,7 +101,7 @@ class Human(object):
 
 		# log data to db
 		rdb = RDBManager()
-		_, records_affected = rdb.execute(
+		_, err = rdb.execute(
 			sql_query="""
 						INSERT IGNORE 
 						INTO `symptoms`(`human_id`, `created`, `modified`, `symptom`, `value`)
@@ -113,14 +112,13 @@ class Human(object):
 			)
 		)
 
-		# return results
-		return records_affected == 1
+		return err is None
 
 	def get_most_recent_location(self):
 		# create db instance
 		rdb = RDBManager()
 
-		most_recent_location, _ = rdb.execute(
+		most_recent_location, err = rdb.execute(
 			sql_query="""
 				SELECT `latitude`, `longitude`
 				FROM `geolocations`
@@ -182,7 +180,7 @@ class Human(object):
 
 		# log data to db
 		rdb = RDBManager()
-		_, records_affected = rdb.execute(
+		_, err = rdb.execute(
 			sql_query="""
 				INSERT IGNORE 
 				INTO `geolocations`(`human_id`, `created`, `modified`, `latitude`, `longitude`)
@@ -202,13 +200,13 @@ class Human(object):
 		self.update_tz(lat=latitude, lng=longitude)
 
 		# return results
-		return records_affected == 1
+		return err is None
 
 	def update_tz(self, lat: float, lng: float):
 		# update TZ
 		rdb = RDBManager()
 		try:
-			_, records_affected = rdb.execute(
+			_, err = rdb.execute(
 				sql_query="""
 					UPDATE `humans`
 					SET
@@ -227,7 +225,9 @@ class Human(object):
 				)
 			)
 		except Exception as e:
-			pass
+			logger.error(e)
+
+		return err is None
 
 	@staticmethod
 	def validate_fingerprint(fingerprint: str) -> (bool, Exception):
@@ -262,7 +262,7 @@ class Human(object):
 		human_id = str(uuid.uuid4())
 
 		# send data to db
-		_, records_affected = rdb.execute(
+		_, err = rdb.execute(
 			sql_query="""
 				INSERT IGNORE INTO `humans`(
 					`id`, `telegram_human_id`, `fingerprint`, `created`, `modified`
@@ -276,12 +276,8 @@ class Human(object):
 				mysql_db_format_value(value=fingerprint)
 			)
 		)
-		if ENV == Environments.DEVELOPMENT.value:
-			print("Human.new records_affected : {}".format(records_affected))
 
-		# return results
-		if records_affected == 1:
-			# get new human
+		if err is None:
 			human = Human(human_id=human_id)
 			return human
 
@@ -358,8 +354,11 @@ class Human(object):
 			days_window,
 			"HAVING distance <= {}".format(km_radius*5) if km_radius is not None else ""
 		)
-		risky_humans, _ = rdb.execute(sql_query=sql_query)
-		return risky_humans
+		risky_humans, err = rdb.execute(sql_query=sql_query)
+		if err is None:
+			return risky_humans
+		else:
+			return []
 
 	@staticmethod
 	def get_proximity_alert(lat: float, lng: float):
@@ -395,7 +394,7 @@ class Human(object):
 	@staticmethod
 	def telegram_id_exists(telegram_human_id: int):
 		rdb = RDBManager()
-		_, records = rdb.execute(
+		_, err = rdb.execute(
 			sql_query="""
 					SELECT *
 					FROM `humans`
@@ -404,12 +403,12 @@ class Human(object):
 				mysql_db_format_value(telegram_human_id)
 			)
 		)
-		return records == 1
+		return err is None
 
 	@staticmethod
 	def get_human_from_fingerprint(fingerprint: str):
 		rdb = RDBManager()
-		records, _ = rdb.execute(
+		records, err = rdb.execute(
 			sql_query="""
 						SELECT `id`
 						FROM `humans`
@@ -454,10 +453,9 @@ class Human(object):
 		rdb = RDBManager()
 		audience = []
 		try:
-			audience, _ = rdb.execute(sql_query=sql_query)
+			audience, err = rdb.execute(sql_query=sql_query)
 		except Exception as e:
-			if ENV == Environments.DEVELOPMENT.value:
-				print(e)
+			logger.error(e)
 		return audience
 
 	@staticmethod
@@ -470,7 +468,7 @@ class Human(object):
 		rdb = RDBManager()
 
 		# check if `telegram_id` exists in db
-		telegram_human_id_search_results, _ = rdb.execute(
+		telegram_human_id_search_results, err = rdb.execute(
 			sql_query="""
 				SELECT *
 				FROM `humans`
@@ -492,7 +490,7 @@ class Human(object):
 
 		# validate `human_id` existence
 		rdb = RDBManager()
-		human_id_search_results, _ = rdb.execute(
+		human_id_search_results, err = rdb.execute(
 			sql_query="""
 						SELECT *
 						FROM `humans`
@@ -511,7 +509,7 @@ class Human(object):
 
 		# validate `human_id` existence
 		rdb = RDBManager()
-		human_id_search_results, _ = rdb.execute(
+		human_id_search_results, err = rdb.execute(
 			sql_query="""
 					SELECT *
 					FROM `humans`

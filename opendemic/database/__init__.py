@@ -25,8 +25,8 @@ class RDBManager(object):
 		except AttributeError as e:
 			logger.error(e)
 
-	def pre_execute(self, sql_query: str):
-		row_count = 0
+	def pre_execute(self, sql_query: str) -> Exception:
+		err = None
 		try:
 			with self.connection.cursor() as cursor:
 				cursor.execute(sql_query)
@@ -34,10 +34,11 @@ class RDBManager(object):
 				self.connection.commit()
 		except BaseException as e:
 			logger.error(e)
-		return row_count
+			err = e
+		return err
 
-	def execute(self, sql_query: str):
-		row_count = 0
+	def execute(self, sql_query: str) -> (list, Exception):
+		err = None
 		result = []
 		starting_time = time()
 		try:
@@ -49,4 +50,5 @@ class RDBManager(object):
 				self.connection.commit()
 		except BaseException as e:
 			logger.error(e)
-		return result, row_count
+			err = e
+		return result, err
