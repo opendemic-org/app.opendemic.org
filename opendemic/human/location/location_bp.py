@@ -1,6 +1,7 @@
 from config.config import CONFIG, ENV, Environments
 from flask import Blueprint, Response, render_template, request
-from opendemic.human.model import Human
+from opendemic.human.model import Human, get_risky_humans, \
+	validate_fingerprint, create_human, get_human_from_fingerprint
 from opendemic.human.location.geo import Coordinate
 import json
 from enum import Enum
@@ -55,7 +56,7 @@ def location():
 
 			# validate FINGERPRINT
 			if param_name == LocationResourceFields.FINGERPRINT.value:
-				fingerprint_val, fingerprint_error = Human.validate_fingerprint(
+				fingerprint_val, fingerprint_error = validate_fingerprint(
 					fingerprint=params[LocationResourceFields.FINGERPRINT.value]
 				)
 				if not fingerprint_val:
@@ -89,9 +90,9 @@ def location():
 			return response
 
 		# authenticate
-		human = Human.get_human_from_fingerprint(fingerprint=params[LocationResourceFields.FINGERPRINT.value])
+		human = get_human_from_fingerprint(fingerprint=params[LocationResourceFields.FINGERPRINT.value])
 		if human is None:
-			human = Human.new(fingerprint=params[LocationResourceFields.FINGERPRINT.value])
+			human = create_human(fingerprint=params[LocationResourceFields.FINGERPRINT.value])
 
 		# log human location
 		try:
@@ -105,7 +106,7 @@ def location():
 				print(e)
 
 		# get risky humans
-		risky_humans = Human.get_risky_humans(
+		risky_humans = get_risky_humans(
 			lat=params[LocationResourceFields.LATITUDE.value],
 			lng=params[LocationResourceFields.LONGITUDE.value],
 			days_window=int(CONFIG.get('days_window')),

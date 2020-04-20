@@ -1,7 +1,7 @@
 from config.config import ENV, Environments
 from config.types import Symptoms
 from flask import Blueprint, Response, abort, request
-from opendemic.human.model import Human
+from opendemic.human.model import Human, create_human, get_human_from_fingerprint
 import json
 from opendemic.human.location.geo import Coordinate
 from enum import Enum
@@ -60,9 +60,9 @@ def symptom():
 
 		# get human
 		try:
-			human = Human.get_human_from_fingerprint(fingerprint=fingerprint)
+			human = get_human_from_fingerprint(fingerprint=fingerprint)
 			if human is None:
-				human = Human.new(fingerprint=fingerprint)
+				human = create_human(fingerprint=fingerprint)
 		except Exception as e:
 			if ENV == Environments.DEVELOPMENT.value:
 				print(e)

@@ -1,5 +1,5 @@
 from flask import Blueprint, Response, request
-from opendemic.human.model import Human
+from opendemic.human.model import Human, get_proximity_alert
 from opendemic.human.location.geo import Coordinate
 import json
 from enum import Enum
@@ -63,7 +63,7 @@ def alert():
 		return response
 
 	# get alert message
-	alert_message = Human.get_proximity_alert(
+	alert_message = get_proximity_alert(
 		lat=params[AlertResourceFields.LATITUDE.value],
 		lng=params[AlertResourceFields.LONGITUDE.value]
 	)

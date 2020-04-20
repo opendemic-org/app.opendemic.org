@@ -29,7 +29,12 @@ def local_map(human_id):
 		'coordinates': self_lat_lng
 	}
 
-	risky_humans_geojson = get_risky_humans_geojson(lat=lat, lng=lng)
+	risky_humans_geojson = get_risky_humans_geojson(
+		lat=lat,
+		lng=lng,
+		days_window=int(CONFIG.get('days_window')),
+		km_radius=int(CONFIG.get('km_radius'))
+	)
 
 	return render_template(
 		MAP_TEMPLATE,
@@ -53,7 +58,12 @@ def global_map(token):
 	if lat is None or lng is None:
 		lat, lng = DEFAULT_LAT, DEFAULT_LNG
 
-	risky_humans_geojson = get_risky_humans_geojson(lat=lat, lng=lng, km_radius=None)
+	risky_humans_geojson = get_risky_humans_geojson(
+		lat=lat,
+		lng=lng,
+		days_window=int(CONFIG.get('days_window')),
+		km_radius=None
+	)
 
 	return render_template(
 		MAP_TEMPLATE,

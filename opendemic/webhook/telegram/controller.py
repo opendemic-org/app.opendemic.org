@@ -7,7 +7,7 @@ from telebot.types import Update
 from flask import Blueprint, request, abort
 import datetime
 from opendemic.webhook.telegram.model import log_action, log_sent_message
-from opendemic.human.model import Human
+from opendemic.human.model import Human, create_human, verify_telegram_id_exists
 from opendemic.webhook.telegram.api_helpers import get_telegram_menu, get_telegram_bot_instance, \
     get_webhook_update, make_reply_keyboard_markup
 from opendemic.webhook.telegram.model import TelegramCommand
@@ -233,7 +233,7 @@ def process_telegram_update(update: Update):
     logger.debug("[TELEGRAM WEBHOOK REQUEST] message : {}".format(telegram_message_id))
 
     # authenticate human
-    human_exists, human_id = Human.validate_telegram_human_id(telegram_human_id=telegram_human_id)
+    human_exists, human_id = verify_telegram_id_exists(telegram_human_id=telegram_human_id)
 
     # log message
     if is_callback:
@@ -270,9 +270,7 @@ def process_telegram_update(update: Update):
         except Exception as e:
             return '', 204
         else:
-            human = Human.new(
-                telegram_human_id=telegram_human_id
-            )
+            human = create_human(telegram_human_id=telegram_human_id)
 
             log_sent_message(bot.send_message(
                 chat_id=telegram_human_id,

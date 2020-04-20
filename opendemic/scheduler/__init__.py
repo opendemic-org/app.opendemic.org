@@ -1,11 +1,11 @@
 from config.config import CONFIG
 from apscheduler.schedulers.background import BackgroundScheduler
 from opendemic.webhook.telegram.api_helpers import get_telegram_menu, get_telegram_bot_instance
-from opendemic.human.model import Human
+from opendemic.human.model import Human, get_all_humans_for_telegram_notifications
 
 
 def send_reminders(hours_of_day: list):
-	audience = Human.get_all_humans_for_telegram_notifications(hours_of_day=hours_of_day)
+	audience = get_all_humans_for_telegram_notifications(hours_of_day=hours_of_day)
 
 	# create bot
 	bot = get_telegram_bot_instance()
@@ -45,7 +45,7 @@ def send_reminders(hours_of_day: list):
 
 
 def send_daily_report(hours_of_day: list):
-	audience = Human.get_all_humans_for_telegram_notifications(hours_of_day=hours_of_day)
+	audience = get_all_humans_for_telegram_notifications(hours_of_day=hours_of_day)
 
 	# create bot
 	bot = get_telegram_bot_instance()
@@ -80,7 +80,7 @@ def send_daily_report(hours_of_day: list):
 
 
 def send_feedback_request(hours_of_day: list):
-	audience = Human.get_all_humans_for_telegram_notifications(hours_of_day=hours_of_day)
+	audience = get_all_humans_for_telegram_notifications(hours_of_day=hours_of_day)
 
 	# create bot
 	bot = get_telegram_bot_instance()
