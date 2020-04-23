@@ -9,10 +9,27 @@ from helpers.id import verify_uuid_regex
 from opendemic.database import RDBManager
 from opendemic.webhook.telegram.api_helpers import get_telegram_bot_instance, make_reply_keyboard_markup
 from opendemic.map.model import CoordinateType
-from helpers.formatting import mysql_db_format_value
-import datetime
+from helpers.formatting import mysql_db_format_value, quote_wrap
+from enum import Enum
 import uuid
 import os
+
+
+class HumanProperty(Enum):
+	ID = 'id'
+	HUMAN_ID = 'human_id'
+	TELEGRAM_HUMAN_ID = 'telegram_human_id'
+	UNSUBSCRIBED = 'unsubscribed'
+	FINGERPRINT = 'fingerprint'
+
+	@classmethod
+	def value_to_member_name(cls, value):
+		if cls.has_value(value):
+			return cls._value2member_map_[value].name
+
+	@classmethod
+	def has_value(cls, value):
+		return value in cls._value2member_map_
 
 
 class Human(object):
@@ -23,35 +40,43 @@ class Human(object):
 		human_exists, human_data = verify_human_exists(human_id=human_id)
 		assert human_exists
 
-		self._human_id = human_data['id']
+		self._human_id = human_data[HumanProperty.ID.value]
 		try:
-			self._telegram_human_id = int(human_data['telegram_human_id'])
+			self._telegram_human_id = int(human_data[HumanProperty.TELEGRAM_HUMAN_ID.value])
 		except TypeError as e:
 			self._telegram_human_id = None
 
 	@property
-	def id(self):
+	def id(self) -> str:
 		return self._human_id
 
 	@property
-	def human_id(self):
+	def human_id(self) -> str:
 		return self._human_id
 
 	@property
-	def telegram_human_id(self):
+	def telegram_human_id(self) -> int:
 		if self._telegram_human_id is None:
 			try:
-				self._telegram_human_id = int(self.get_human_attribute(attribute_name='telegram_human_id'))
+				self._telegram_human_id = int(
+					self.get_human_attribute(attribute_name=HumanProperty.TELEGRAM_HUMAN_ID.value)
+				)
 			except TypeError as e:
 				logger.error(e)
 		return self._telegram_human_id
 
 	@property
-	def unsubscribed(self):
-		return self.get_human_attribute(attribute_name='unsubscribed')
+	def unsubscribed(self) -> bool:
+		unsub_status = False
+		try:
+			unsub_status = bool(self.get_human_attribute(attribute_name=HumanProperty.UNSUBSCRIBED.value))
+		except Exception as e:
+			logger.error(e)
+		return unsub_status
 
-	def unsubscribe(self):
+	def unsubscribe(self) -> bool:
 		rdb = RDBManager()
+		err = None
 		try:
 			_, err = rdb.execute(
 				sql_query="""
@@ -67,18 +92,21 @@ class Human(object):
 		except Exception as e:
 			logger.error(e)
 
-	def get_human_attribute(self, attribute_name: str):
-		# validate `human_id` existence
-		rdb = RDBManager()
-		human_id_search_results, err = rdb.execute(
-			sql_query="""
-				SELECT *
-				FROM `humans`
-				WHERE `id` = '{}'
-			""".format(self._human_id)
-		)
+		return err is None
 
-		# return results
+	def get_human_attribute(self, attribute_name: str) -> str:
+		rdb = RDBManager()
+		try:
+			human_id_search_results, err = rdb.execute(
+				sql_query="""
+					SELECT *
+					FROM `humans`
+					WHERE `id` = '{}'
+				""".format(self._human_id)
+			)
+		except Exception as e:
+			logger.error(e)
+
 		if len(human_id_search_results) == 1:
 			if attribute_name in human_id_search_results[0]:
 				return human_id_search_results[0][attribute_name]
@@ -87,61 +115,65 @@ class Human(object):
 		else:
 			return None
 
-	def log_symptom(self, symptom_name: str):
-		# validate inputs
+	def log_symptom(self, symptom_name: str) -> bool:
 		if not Symptoms.has_value(symptom_name):
 			return False
 
-		# log data to db
 		rdb = RDBManager()
-		_, err = rdb.execute(
-			sql_query="""
-						INSERT IGNORE 
-						INTO `symptoms`(`human_id`, `created`, `modified`, `symptom`, `value`)
-						VALUES ({}, UTC_TIMESTAMP(), UTC_TIMESTAMP(), {}, 1.0)
-					""".format(
-				mysql_db_format_value(value=self.id),
-				mysql_db_format_value(value=symptom_name)
+		err = None
+		try:
+			_, err = rdb.execute(
+				sql_query="""
+							INSERT IGNORE 
+							INTO `symptoms`(`human_id`, `created`, `modified`, `symptom`, `value`)
+							VALUES ({}, UTC_TIMESTAMP(), UTC_TIMESTAMP(), {}, 1.0)
+						""".format(
+					mysql_db_format_value(value=self.id),
+					mysql_db_format_value(value=symptom_name)
+				)
 			)
-		)
+		except Exception as e:
+			logger.error(e)
 
 		return err is None
 
-	def get_most_recent_location(self):
-		# create db instance
+	def get_most_recent_location(self) -> (float, float):
 		rdb = RDBManager()
-
-		most_recent_location, err = rdb.execute(
-			sql_query="""
-				SELECT `latitude`, `longitude`
-				FROM `geolocations`
-				WHERE 
-					`human_id` = {}
-					AND
-					`latitude` IS NOT NULL
-					AND
-					`longitude` IS NOT NULL
-				ORDER BY `created` DESC
-				LIMIT 1
-			""".format(
-				mysql_db_format_value(value=self.id)
+		err = None
+		try:
+			most_recent_location, err = rdb.execute(
+				sql_query="""
+					SELECT `{}`, `{}`
+					FROM `geolocations`
+					WHERE 
+						`human_id` = {}
+						AND
+						`latitude` IS NOT NULL
+						AND
+						`longitude` IS NOT NULL
+					ORDER BY `created` DESC
+					LIMIT 1
+				""".format(
+					CoordinateType.LATITUDE.value,
+					CoordinateType.LONGITUDE.value,
+					mysql_db_format_value(value=self.id)
+				)
 			)
-		)
+		except Exception as e:
+			logger.error(e)
 
 		if len(most_recent_location) == 1:
-			return float(most_recent_location[0]['latitude']), float(most_recent_location[0]['longitude'])
+			return float(most_recent_location[0][CoordinateType.LATITUDE.value]), \
+				   float(most_recent_location[0][CoordinateType.LONGITUDE.value])
 		else:
-			return None
+			return None, None
 
-	def send_proximity_alert(self, lat: float, lng: float):
-		# verify user has telegram id
+	def send_proximity_alert(self, lat: float, lng: float) -> bool:
 		if self.telegram_human_id is None:
-			return
+			return False
 
-		# get proximity alert
 		alert_message = get_proximity_alert(lat=lat, lng=lng)
 
-		# create bot
 		bot = get_telegram_bot_instance()
 		if LOCAL:
 			map_url = os.path.join(CONFIG.get('local-base-url'), "map", self.id)
@@ -158,46 +190,43 @@ class Human(object):
 				])
 			)
 		except Exception as e:
-			if ENV == Environments.DEVELOPMENT.value:
-				print(e)
-			# try to unsubscribe
-			try:
-				self.unsubscribe()
-			except Exception as unsb_e:
-				pass
+			logger.error(e)
+			self.unsubscribe()
+			return False
+		else:
+			return True
 
-	def log_location(self, latitude: float, longitude: float, send_alert: bool = True) -> (bool, datetime.datetime):
-		# validate inputs
+	def log_location(self, latitude: float, longitude: float, send_alert: bool = True) -> bool:
 		if not isinstance(latitude, float) or not isinstance(longitude, float):
 			return False
 
-		# log data to db
 		rdb = RDBManager()
-		_, err = rdb.execute(
-			sql_query="""
-				INSERT IGNORE 
-				INTO `geolocations`(`human_id`, `created`, `modified`, `latitude`, `longitude`)
-				VALUES ({}, UTC_TIMESTAMP(), UTC_TIMESTAMP(), {}, {})
-			""".format(
-				mysql_db_format_value(value=self.id),
-				mysql_db_format_value(value=latitude),
-				mysql_db_format_value(value=longitude)
+		err = None
+		try:
+			_, err = rdb.execute(
+				sql_query="""
+					INSERT IGNORE 
+					INTO `geolocations`(`human_id`, `created`, `modified`, `latitude`, `longitude`)
+					VALUES ({}, UTC_TIMESTAMP(), UTC_TIMESTAMP(), {}, {})
+				""".format(
+					mysql_db_format_value(value=self.id),
+					mysql_db_format_value(value=latitude),
+					mysql_db_format_value(value=longitude)
+				)
 			)
-		)
+		except Exception as e:
+			logger.error(e)
 
-		# send alert
 		if send_alert:
 			self.send_proximity_alert(lat=latitude, lng=longitude)
 
-		# update TZ
 		self.update_tz(lat=latitude, lng=longitude)
 
-		# return results
 		return err is None
 
-	def update_tz(self, lat: float, lng: float):
-		# update TZ
+	def update_tz(self, lat: float, lng: float) -> bool:
 		rdb = RDBManager()
+		err = None
 		try:
 			_, err = rdb.execute(
 				sql_query="""
@@ -223,19 +252,86 @@ class Human(object):
 		return err is None
 
 
+def subscribe_to_newsletter(phone: str = None, email: str = None) -> (bool, str):
+	if phone is not None or email is not None:
+		rdb = RDBManager()
+		try:
+			existing_contact, err = rdb.execute(
+				sql_query="""
+					SELECT `id`
+					FROM `contact`
+					WHERE
+						`phone_number` = {}
+						OR
+						`email` = {}
+					LIMIT 1
+				""".format(
+					mysql_db_format_value(value=phone),
+					mysql_db_format_value(value=email)
+				)
+			)
+		except Exception as e:
+			logger.error(e)
+			return False, "An error occurred while processing your registration. Please try again."
+		else:
+			if len(existing_contact) == 1 and 'id' in existing_contact[0]:
+				contact_id = existing_contact[0]['id']
+				try:
+					_, err = rdb.execute(
+						sql_query="""
+							UPDATE `contact`
+							SET
+								`phone_number` = IF({} is not null, {}, `phone_number`),
+								`email` = IF({} is not null, {}, `email`)
+							WHERE
+								`id` = {}
+								""".format(
+							mysql_db_format_value(value=phone),
+							quote_wrap(phone),
+							mysql_db_format_value(value=email),
+							mysql_db_format_value(value=email),
+							mysql_db_format_value(value=contact_id)
+						)
+					)
+				except Exception as e:
+					logger.error(e)
+			else:
+				new_contact_id = str(uuid.uuid4())
+				_, err = rdb.execute(
+					sql_query="""
+						INSERT IGNORE INTO `contact` (`id`, `phone_number`, `email`)
+						VALUES
+							({}, {}, {})
+							""".format(
+						mysql_db_format_value(value=new_contact_id),
+						quote_wrap(phone),
+						mysql_db_format_value(value=email)
+					)
+				)
+			return True, "Subscribed!"
+	else:
+		return False, "Seems like you didn't provide any contact information. Please try again."
+
+
 def get_human_from_fingerprint(fingerprint: str) -> Human:
 	rdb = RDBManager()
-	records, err = rdb.execute(
-		sql_query="""
-					SELECT `id`
-					FROM `humans`
-					WHERE `fingerprint` = {}
-				""".format(
-			mysql_db_format_value(fingerprint)
+	err = None
+	try:
+		records, err = rdb.execute(
+			sql_query="""
+						SELECT `{}`
+						FROM `humans`
+						WHERE `{}` = {}
+					""".format(
+				HumanProperty.ID.value,
+				HumanProperty.FINGERPRINT.value,
+				mysql_db_format_value(fingerprint)
+			)
 		)
-	)
+	except Exception as e:
+		logger.error(e)
 
-	return Human(human_id=records[0]['id']) if len(records) == 1 else None
+	return Human(human_id=records[0][HumanProperty.ID.value]) if len(records) == 1 else None
 
 
 def get_all_humans_for_telegram_notifications(hours_of_day: list) -> list:
@@ -277,16 +373,24 @@ def verify_telegram_id_exists(telegram_human_id: int) -> (bool, str):
 		return TypeError('`telegram_human_id` of type {}. Expected [int]'.format(type(telegram_human_id)))
 
 	rdb = RDBManager()
-	telegram_human_id_search_results, err = rdb.execute(
-		sql_query="""
-					SELECT *
-					FROM `humans`
-					WHERE `telegram_human_id` = {}
-				""".format(telegram_human_id)
-	)
+	err = None
+	try:
+		telegram_human_id_search_results, err = rdb.execute(
+			sql_query="""
+						SELECT `{}`
+						FROM `humans`
+						WHERE `{}` = {}
+					""".format(
+				HumanProperty.ID.value,
+				HumanProperty.TELEGRAM_HUMAN_ID.value,
+				telegram_human_id
+			)
+		)
+	except Exception as e:
+		logger.error(e)
 
 	if len(telegram_human_id_search_results) == 1:
-		return True, telegram_human_id_search_results[0]['id']
+		return True, telegram_human_id_search_results[0][HumanProperty.ID.value]
 	else:
 		return False, None
 
@@ -327,20 +431,27 @@ def create_human(telegram_human_id: int = None, fingerprint: str = None) -> Huma
 
 	human_id = str(uuid.uuid4())
 	rdb = RDBManager()
-	_, err = rdb.execute(
-		sql_query="""
-			INSERT IGNORE INTO `humans`(
-				`id`, `telegram_human_id`, `fingerprint`, `created`, `modified`
+	err = None
+	try:
+		_, err = rdb.execute(
+			sql_query="""
+				INSERT IGNORE INTO `humans`(
+					`{}`, `{}`, `{}`, `created`, `modified`
+				)
+				VALUES (
+					{}, {}, {}, UTC_TIMESTAMP(), UTC_TIMESTAMP()
+				)
+			""".format(
+				HumanProperty.ID.value,
+				HumanProperty.TELEGRAM_HUMAN_ID.value,
+				HumanProperty.FINGERPRINT.value,
+				mysql_db_format_value(value=human_id),
+				mysql_db_format_value(value=telegram_human_id),
+				mysql_db_format_value(value=fingerprint)
 			)
-			VALUES (
-				{}, {}, {}, UTC_TIMESTAMP(), UTC_TIMESTAMP()
-			)
-		""".format(
-			mysql_db_format_value(value=human_id),
-			mysql_db_format_value(value=telegram_human_id),
-			mysql_db_format_value(value=fingerprint)
 		)
-	)
+	except Exception as e:
+		logger.error(e)
 
 	if err is None:
 		human = Human(human_id=human_id)
@@ -360,16 +471,23 @@ def validate_fingerprint(fingerprint: str) -> (bool, Exception):
 
 def verify_human_exists(human_id: str) -> (bool, dict):
 	if not verify_uuid_regex(s=human_id):
-		return False
+		return False, None
 
 	rdb = RDBManager()
-	human_id_search_results, err = rdb.execute(
-		sql_query="""
-				SELECT *
-				FROM `humans`
-				WHERE `id` = '{}'
-			""".format(human_id)
-	)
+	err = None
+	try:
+		human_id_search_results, err = rdb.execute(
+			sql_query="""
+					SELECT *
+					FROM `humans`
+					WHERE `{}` = '{}'
+				""".format(
+				HumanProperty.ID.value,
+				human_id
+			)
+		)
+	except Exception as e:
+		logger.error(e)
 
 	if len(human_id_search_results) == 1:
 		return True, human_id_search_results[0]
@@ -378,77 +496,79 @@ def verify_human_exists(human_id: str) -> (bool, dict):
 
 
 def get_risky_humans(lat: float, lng: float, days_window: int, km_radius: int) -> list:
-	# get DB
 	rdb = RDBManager()
-
-	# fetch cases
-	sql_query = """						
-			SELECT 
-				CASE
-					WHEN agg.`risk_level` = 5 THEN round(agg.`latitude` + gauss(0,0.002), 5)
-					ELSE round(agg.`latitude` + gauss(0,0.001), 5)
-				 END AS {},
-				 CASE
-					WHEN agg.`risk_level` = 5 THEN round(agg.`longitude` + gauss(0,0.002), 5)
-					ELSE round(agg.`longitude` + gauss(0,0.001), 5)
-				 END AS {},
-				CASE
-					WHEN agg.`risk_level` > 1 THEN agg.`risk_level`
-					ELSE COUNT(DISTINCT(agg.`symptom`))
-				END AS 'mag' 
-			FROM (
-			SELECT
-				geo.`human_id`,
-				DATE(sym.`created`) AS 'date',
-				geo.`latitude`,
-				geo.`longitude`,
-				sym.`symptom`,
-				round(( 6373 * acos( least(1.0,  
-					cos( radians({}) ) 
-					* cos( radians(geo.`latitude`) ) 
-					* cos( radians(geo.`longitude`) - radians({}) ) 
-					+ sin( radians({}) ) 
-					* sin( radians(geo.`latitude`) 
-				  ) ) ) 
-				), 1) as 'distance',
-				CASE 
-					WHEN sym.`symptom` = 'verified_covid19' THEN 5
-					WHEN sym.`symptom` = 'confirmed_covid19' THEN 4
-					ELSE 1
-				END AS 'risk_level'
-			FROM `geolocations` as geo
-			LEFT JOIN `symptoms` as sym
-			ON 
-				geo.`human_id` = sym.`human_id`
-				AND 
-				DATE(sym.`created`) = DATE(geo.`created`)
-			WHERE 
-				sym.`symptom` is not null
-				AND
-				geo.`latitude` is not null
-				AND
-				geo.`longitude` is not null
+	err = None
+	try:
+		risky_humans, err = rdb.execute(
+			sql_query="""						
+				SELECT 
+					CASE
+						WHEN agg.`risk_level` = 5 THEN round(agg.`latitude` + gauss(0,0.002), 5)
+						ELSE round(agg.`latitude` + gauss(0,0.001), 5)
+					 END AS {},
+					 CASE
+						WHEN agg.`risk_level` = 5 THEN round(agg.`longitude` + gauss(0,0.002), 5)
+						ELSE round(agg.`longitude` + gauss(0,0.001), 5)
+					 END AS {},
+					CASE
+						WHEN agg.`risk_level` > 1 THEN agg.`risk_level`
+						ELSE COUNT(DISTINCT(agg.`symptom`))
+					END AS 'mag' 
+				FROM (
+				SELECT
+					geo.`human_id`,
+					DATE(sym.`created`) AS 'date',
+					geo.`latitude`,
+					geo.`longitude`,
+					sym.`symptom`,
+					round(( 6373 * acos( least(1.0,  
+						cos( radians({}) ) 
+						* cos( radians(geo.`latitude`) ) 
+						* cos( radians(geo.`longitude`) - radians({}) ) 
+						+ sin( radians({}) ) 
+						* sin( radians(geo.`latitude`) 
+					  ) ) ) 
+					), 1) as 'distance',
+					CASE 
+						WHEN sym.`symptom` = 'verified_covid19' THEN 5
+						WHEN sym.`symptom` = 'confirmed_covid19' THEN 4
+						ELSE 1
+					END AS 'risk_level'
+				FROM `geolocations` as geo
+				LEFT JOIN `symptoms` as sym
+				ON 
+					geo.`human_id` = sym.`human_id`
+					AND 
+					DATE(sym.`created`) = DATE(geo.`created`)
+				WHERE 
+					sym.`symptom` is not null
+					AND
+					geo.`latitude` is not null
+					AND
+					geo.`longitude` is not null
+					{}
+					AND
+					(sym.`value` is not null or sym.`value` > 0)
 				{}
-				AND
-				(sym.`value` is not null or sym.`value` > 0)
-			{}
-			) as agg
-			GROUP BY 
-				agg.`human_id`,
-				agg.`date`,
-				agg.`latitude`,
-				agg.`longitude`,
-				agg.`risk_level`;
-								""".format(
-		mysql_db_format_value(CoordinateType.LATITUDE.value),
-		mysql_db_format_value(CoordinateType.LONGITUDE.value),
-		mysql_db_format_value(value=lat),
-		mysql_db_format_value(value=lng),
-		mysql_db_format_value(value=lat),
-		"AND sym.`created` >= DATE(NOW()) - INTERVAL {} DAY".format(days_window) if days_window is not None else "",
-		"HAVING distance <= {}".format(km_radius*5) if km_radius is not None else ""
-	)
-	risky_humans, err = rdb.execute(sql_query=sql_query)
+				) as agg
+				GROUP BY 
+					agg.`human_id`,
+					agg.`date`,
+					agg.`latitude`,
+					agg.`longitude`,
+					agg.`risk_level`;
+										""".format(
+				mysql_db_format_value(CoordinateType.LATITUDE.value),
+				mysql_db_format_value(CoordinateType.LONGITUDE.value),
+				mysql_db_format_value(value=lat),
+				mysql_db_format_value(value=lng),
+				mysql_db_format_value(value=lat),
+				"AND sym.`created` >= DATE(NOW()) - INTERVAL {} DAY".format(days_window) if days_window is not None else "",
+				"HAVING distance <= {}".format(km_radius*5) if km_radius is not None else ""
+			)
+		)
+	except Exception as e:
+		logger.error(e)
 	if err is None:
 		return risky_humans
 	else:
@@ -456,7 +576,6 @@ def get_risky_humans(lat: float, lng: float, days_window: int, km_radius: int) -
 
 
 def get_risky_humans_geojson(lat: float, lng: float, days_window: int, km_radius: int) -> dict:
-	# get risky humans
 	risky_humans = get_risky_humans(
 		lat=lat,
 		lng=lng,

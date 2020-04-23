@@ -52,7 +52,7 @@ def create_app():
     from opendemic.map import controller as map_controller
 
     from opendemic.human.symptom import symptom_bp
-    from opendemic.human.subscription import subscribe_bp
+    from opendemic.human.subscription import controller
     from opendemic.human.location import location_bp
     from opendemic.human.alert import alert_bp
     app.register_blueprint(blueprint=telegram_controller.blueprint, url_prefix='/webhook')
@@ -61,7 +61,7 @@ def create_app():
     app.register_blueprint(blueprint=alert_bp.blueprint, url_prefix='/human')
     app.register_blueprint(blueprint=map_controller.blueprint)
     app.register_blueprint(blueprint=contact_controller.blueprint)
-    app.register_blueprint(blueprint=subscribe_bp.blueprint)
+    app.register_blueprint(blueprint=controller.blueprint)
 
     # TODO - move Telegram webhook registration to worker
     try:
