@@ -1,7 +1,7 @@
 from config.config import CONFIG
 from apscheduler.schedulers.background import BackgroundScheduler
 from opendemic.webhook.telegram.util import get_telegram_menu, get_telegram_bot_instance
-from opendemic.human.model import Human, get_all_humans_for_telegram_notifications, HumanProperty
+from opendemic.human.model import Human, get_all_humans_for_telegram_notifications, HumanProperties
 
 
 def send_reminders(hours_of_day: list):
@@ -16,7 +16,7 @@ def send_reminders(hours_of_day: list):
 	for member in audience:
 		try:
 			bot.send_message(
-				chat_id=member[HumanProperty.TELEGRAM_HUMAN_ID.value],
+				chat_id=member[HumanProperties.TELEGRAM_HUMAN_ID.value],
 				text="👇 Remember to report your location (always) and symptoms (if any) 👇",
 				reply_markup=get_telegram_menu()
 			)
@@ -30,7 +30,7 @@ def send_reminders(hours_of_day: list):
 				notify_admin = False
 			# try to unsubscribe
 			try:
-				human = Human(human_id=member[HumanProperty.ID.value])
+				human = Human(human_id=member[HumanProperties.ID.value])
 				human.unsubscribe()
 			except Exception as unsb_e:
 				pass
@@ -54,7 +54,7 @@ def send_daily_report(hours_of_day: list):
 	count = 0
 	for member in audience:
 		try:
-			human = Human(human_id=member[HumanProperty.ID.value])
+			human = Human(human_id=member[HumanProperties.ID.value])
 
 			# get most recent coordinates
 			most_recent_location = human.get_most_recent_location()
@@ -91,7 +91,7 @@ def send_feedback_request(hours_of_day: list):
 	for member in audience:
 		try:
 			bot.send_message(
-				chat_id=member[HumanProperty.TELEGRAM_HUMAN_ID.value],
+				chat_id=member[HumanProperties.TELEGRAM_HUMAN_ID.value],
 				text="*[🤙 Feedback Request]* Please share your feedback on the product by clicking here: @OpendemicTeam",
 				parse_mode='markdown',
 				reply_markup=get_telegram_menu()
@@ -105,7 +105,7 @@ def send_feedback_request(hours_of_day: list):
 				notify_admin = False
 			# try to unsubscribe
 			try:
-				human = Human(human_id=member[HumanProperty.ID.value])
+				human = Human(human_id=member[HumanProperties.ID.value])
 				human.unsubscribe()
 			except Exception as unsb_e:
 				pass

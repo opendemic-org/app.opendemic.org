@@ -3,19 +3,19 @@ import os
 os.environ['FLASK_ENV'] = 'production'
 os.environ['LOCAL'] = '0'
 """
-from config.config import CONFIG, ENV, Environments, LOCAL, logger
+from config.config import CONFIG, LOCAL, logger
 from config.types import Symptoms
 from helpers.id import verify_uuid_regex
 from opendemic.database import RDBManager
 from opendemic.webhook.telegram.util import get_telegram_bot_instance, make_reply_keyboard_markup
 from opendemic.map.model import CoordinateType
-from helpers.formatting import mysql_db_format_value, quote_wrap
+from helpers.formatting import mysql_db_format_value
 from enum import Enum
 import uuid
 import os
 
 
-class HumanProperty(Enum):
+class HumanProperties(Enum):
 	ID = 'id'
 	HUMAN_ID = 'human_id'
 	TELEGRAM_HUMAN_ID = 'telegram_human_id'
@@ -40,9 +40,9 @@ class Human(object):
 		human_exists, human_data = verify_human_exists(human_id=human_id)
 		assert human_exists
 
-		self._human_id = human_data[HumanProperty.ID.value]
+		self._human_id = human_data[HumanProperties.ID.value]
 		try:
-			self._telegram_human_id = int(human_data[HumanProperty.TELEGRAM_HUMAN_ID.value])
+			self._telegram_human_id = int(human_data[HumanProperties.TELEGRAM_HUMAN_ID.value])
 		except TypeError as e:
 			self._telegram_human_id = None
 
@@ -59,7 +59,7 @@ class Human(object):
 		if self._telegram_human_id is None:
 			try:
 				self._telegram_human_id = int(
-					self.get_human_attribute(attribute_name=HumanProperty.TELEGRAM_HUMAN_ID.value)
+					self.get_human_attribute(attribute_name=HumanProperties.TELEGRAM_HUMAN_ID.value)
 				)
 			except TypeError as e:
 				logger.error(e)
@@ -69,7 +69,7 @@ class Human(object):
 	def unsubscribed(self) -> bool:
 		unsub_status = False
 		try:
-			unsub_status = bool(self.get_human_attribute(attribute_name=HumanProperty.UNSUBSCRIBED.value))
+			unsub_status = bool(self.get_human_attribute(attribute_name=HumanProperties.UNSUBSCRIBED.value))
 		except Exception as e:
 			logger.error(e)
 		return unsub_status
@@ -143,7 +143,9 @@ class Human(object):
 		try:
 			most_recent_location, err = rdb.execute(
 				sql_query="""
-					SELECT `{}`, `{}`
+					SELECT 
+						`latitude` AS `{}`, 
+						`longitude` AS `{}`
 					FROM `geolocations`
 					WHERE 
 						`human_id` = {}
@@ -262,15 +264,15 @@ def get_human_from_fingerprint(fingerprint: str) -> Human:
 						FROM `humans`
 						WHERE `{}` = {}
 					""".format(
-				HumanProperty.ID.value,
-				HumanProperty.FINGERPRINT.value,
+				HumanProperties.ID.value,
+				HumanProperties.FINGERPRINT.value,
 				mysql_db_format_value(fingerprint)
 			)
 		)
 	except Exception as e:
 		logger.error(e)
 
-	return Human(human_id=records[0][HumanProperty.ID.value]) if len(records) == 1 else None
+	return Human(human_id=records[0][HumanProperties.ID.value]) if len(records) == 1 else None
 
 
 def get_all_humans_for_telegram_notifications(hours_of_day: list) -> list:
@@ -320,8 +322,8 @@ def verify_telegram_id_exists(telegram_human_id: int) -> (bool, str):
 						FROM `humans`
 						WHERE `{}` = {}
 					""".format(
-				HumanProperty.ID.value,
-				HumanProperty.TELEGRAM_HUMAN_ID.value,
+				HumanProperties.ID.value,
+				HumanProperties.TELEGRAM_HUMAN_ID.value,
 				telegram_human_id
 			)
 		)
@@ -329,7 +331,7 @@ def verify_telegram_id_exists(telegram_human_id: int) -> (bool, str):
 		logger.error(e)
 
 	if len(telegram_human_id_search_results) == 1:
-		return True, telegram_human_id_search_results[0][HumanProperty.ID.value]
+		return True, telegram_human_id_search_results[0][HumanProperties.ID.value]
 	else:
 		return False, None
 
@@ -381,9 +383,9 @@ def create_human(telegram_human_id: int = None, fingerprint: str = None) -> Huma
 					{}, {}, {}, UTC_TIMESTAMP(), UTC_TIMESTAMP()
 				)
 			""".format(
-				HumanProperty.ID.value,
-				HumanProperty.TELEGRAM_HUMAN_ID.value,
-				HumanProperty.FINGERPRINT.value,
+				HumanProperties.ID.value,
+				HumanProperties.TELEGRAM_HUMAN_ID.value,
+				HumanProperties.FINGERPRINT.value,
 				mysql_db_format_value(value=human_id),
 				mysql_db_format_value(value=telegram_human_id),
 				mysql_db_format_value(value=fingerprint)
@@ -421,7 +423,7 @@ def verify_human_exists(human_id: str) -> (bool, dict):
 					FROM `humans`
 					WHERE `{}` = '{}'
 				""".format(
-				HumanProperty.ID.value,
+				HumanProperties.ID.value,
 				human_id
 			)
 		)
