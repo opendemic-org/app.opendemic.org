@@ -1,6 +1,6 @@
 from config.config import CONFIG
 from apscheduler.schedulers.background import BackgroundScheduler
-from opendemic.webhook.telegram.api_helpers import get_telegram_menu, get_telegram_bot_instance
+from opendemic.webhook.telegram.util import get_telegram_menu, get_telegram_bot_instance
 from opendemic.human.model import Human, get_all_humans_for_telegram_notifications, HumanProperty
 
 

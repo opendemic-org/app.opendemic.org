@@ -8,7 +8,7 @@ from flask import Blueprint, request, abort
 import datetime
 from opendemic.webhook.telegram.model import log_action, log_sent_message
 from opendemic.human.model import Human, create_human, verify_telegram_id_exists
-from opendemic.webhook.telegram.api_helpers import get_telegram_menu, get_telegram_bot_instance, \
+from opendemic.webhook.telegram.util import get_telegram_menu, get_telegram_bot_instance, \
     get_webhook_update, make_reply_keyboard_markup
 from opendemic.webhook.telegram.model import TelegramCommand
 

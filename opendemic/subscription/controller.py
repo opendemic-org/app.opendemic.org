@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from enum import Enum
-from opendemic.human.model import subscribe_to_newsletter
+from opendemic.subscription.model import subscribe_to_newsletter
 
 blueprint = Blueprint('subscribe', __name__)
 

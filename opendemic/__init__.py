@@ -1,4 +1,3 @@
-import json
 import datetime
 import time
 from colorama import init
@@ -8,7 +7,7 @@ from rfc3339 import rfc3339
 from config.config import CONFIG, logger
 from flask import Flask, Response
 from flask_cors import CORS
-from opendemic.webhook.telegram.api_helpers import register_webhook_url, get_telegram_menu, get_telegram_bot_instance
+from opendemic.webhook.telegram.util import register_webhook_url, get_telegram_menu, get_telegram_bot_instance
 from opendemic.database import RDBManager
 from opendemic.human.model import Human
 from opendemic.scheduler import create_scheduler
@@ -50,18 +49,17 @@ def create_app():
     import opendemic.webhook.telegram.controller as telegram_controller
     from opendemic.contact import controller as contact_controller
     from opendemic.map import controller as map_controller
-
-    from opendemic.human.symptom import symptom_bp
-    from opendemic.human.subscription import controller
-    from opendemic.human.location import location_bp
-    from opendemic.human.alert import alert_bp
+    from opendemic.subscription import controller as subscription_controller
+    from opendemic.human.location import controller as location_controller
+    from opendemic.human.symptom import controller as symptom_controller
+    from opendemic.human.alert import controller as alert_controller
     app.register_blueprint(blueprint=telegram_controller.blueprint, url_prefix='/webhook')
-    app.register_blueprint(blueprint=location_bp.blueprint, url_prefix='/human')
-    app.register_blueprint(blueprint=symptom_bp.blueprint, url_prefix='/human')
-    app.register_blueprint(blueprint=alert_bp.blueprint, url_prefix='/human')
+    app.register_blueprint(blueprint=location_controller.blueprint, url_prefix='/human')
+    app.register_blueprint(blueprint=symptom_controller.blueprint, url_prefix='/human')
+    app.register_blueprint(blueprint=alert_controller.blueprint, url_prefix='/human')
+    app.register_blueprint(blueprint=subscription_controller.blueprint)
     app.register_blueprint(blueprint=map_controller.blueprint)
     app.register_blueprint(blueprint=contact_controller.blueprint)
-    app.register_blueprint(blueprint=controller.blueprint)
 
     # TODO - move Telegram webhook registration to worker
     try:
