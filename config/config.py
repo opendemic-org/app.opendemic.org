@@ -2,21 +2,42 @@ import glob
 import os
 import copy
 from enum import Enum
+from logging import Logger
 from helpers.aws_secrets_manager import list_secrets, get_secret
 from configparser import ConfigParser, ExtendedInterpolation
+import logging.handlers
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
 
 
-# create environment Enum class
 class Environments(Enum):
 	DEFAULT = 'DEFAULT'
 	DEVELOPMENT = 'DEVELOPMENT'
 	PRODUCTION = 'PRODUCTION'
 
 
-print("RUNNING CONFIG...")
+# mute werkzeug logger
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
+# create logger
+logger: Logger = logging.getLogger("Logger")
+logger.setLevel(logging.DEBUG)
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+# create formatter
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+# add formatter to ch
+ch.setFormatter(formatter)
+# add ch to logger
+logger.addHandler(ch)
+
+
+logger.debug("RUNNING CONFIG...")
+
 # verify secrets cache
 if not os.path.isfile('./config/secrets.ini'):
-	print("COLLECTING SECRETS...")
+	logger.debug("COLLECTING SECRETS...")
 	secret_names = {i.name:[] for i in list(Environments)}
 	for secret_data in list_secrets():
 		# determine secret environment
@@ -69,6 +90,11 @@ config_parser.read(filenames=file_paths)
 try:
 	global ENV
 	ENV = os.environ['FLASK_ENV'].upper()
+	if ENV != "DEVELOPMENT":
+		sentry_sdk.init(
+			dsn="https://bb302e59e8e142cc95476900c24156fd@o376793.ingest.sentry.io/5197984",
+			integrations=[FlaskIntegration()]
+		)
 	assert ENV in [i.name for i in list(Environments)]
 except KeyError as e:
 	raise KeyError("Unable to find `FLASK_ENV` environment variable.")
