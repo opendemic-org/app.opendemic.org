@@ -94,7 +94,6 @@ def symptom():
 		if SymptomResourceFields.SYMPTOMS.value in payload:
 			symptoms = payload[SymptomResourceFields.SYMPTOMS.value]
 			for symptom_key in symptoms:
-				logger.debug('valid symptom : {}'.format(Symptoms.has_value(SYMPTOMS_MAP[symptom_key])))
 				if symptoms[symptom_key] == 1 and symptom_key in SYMPTOMS_MAP:
 					logged_symptom_success = human.log_symptom(symptom_name=SYMPTOMS_MAP[symptom_key])
 					if logged_symptom_success:
