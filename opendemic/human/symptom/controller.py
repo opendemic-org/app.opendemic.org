@@ -1,9 +1,9 @@
 from config.config import logger
-from config.types import Symptoms
 from flask import Blueprint, Response, request
 from opendemic.human.model import create_human, get_human_from_fingerprint
 import json
 from opendemic.human.location.util import Coordinate
+from opendemic.human.symptom.types import Symptoms
 from enum import Enum
 
 blueprint = Blueprint('symptom', __name__)
@@ -14,6 +14,10 @@ class SymptomResourceFields(Enum):
 	SYMPTOMS = 'symptoms'
 	SYMPTOMS_FEVER = 'fever'
 	SYMPTOMS_COUGH = 'cough'
+	SYMPTOMS_ANOSMIA = 'anosmia'
+	SYMPTOMS_DIARRHEA = 'diarrhea'
+	SYMPTOMS_ABDOMINAL_PAIN = 'abPain'
+	SYMPTOMS_FATIGUE = 'fatigue'
 	SYMPTOMS_SHORTNESS_OF_BREATH = 'shortBreath'
 	SYMPTOMS_CONFIRMED_COVID = 'confirmedCovid'
 	LOCATION = 'location'
@@ -34,6 +38,10 @@ SYMPTOMS_MAP = {
 	SymptomResourceFields.SYMPTOMS_FEVER.value: Symptoms.FEVER.value,
 	SymptomResourceFields.SYMPTOMS_COUGH.value: Symptoms.COUGH.value,
 	SymptomResourceFields.SYMPTOMS_SHORTNESS_OF_BREATH.value: Symptoms.SHORTNESS_OF_BREATH.value,
+	SymptomResourceFields.SYMPTOMS_ANOSMIA.value: Symptoms.ANOSMIA.value,
+	SymptomResourceFields.SYMPTOMS_DIARRHEA.value: Symptoms.DIARRHEA.value,
+	SymptomResourceFields.SYMPTOMS_ABDOMINAL_PAIN.value: Symptoms.ABDOMINAL_PAIN.value,
+	SymptomResourceFields.SYMPTOMS_FATIGUE.value: Symptoms.FATIGUE.value,
 	SymptomResourceFields.SYMPTOMS_CONFIRMED_COVID.value: Symptoms.CONFIRMED_COVID19.value
 }
 
@@ -86,7 +94,6 @@ def symptom():
 		if SymptomResourceFields.SYMPTOMS.value in payload:
 			symptoms = payload[SymptomResourceFields.SYMPTOMS.value]
 			for symptom_key in symptoms:
-				logger.debug('valid symptom : {}'.format(Symptoms.has_value(SYMPTOMS_MAP[symptom_key])))
 				if symptoms[symptom_key] == 1 and symptom_key in SYMPTOMS_MAP:
 					logged_symptom_success = human.log_symptom(symptom_name=SYMPTOMS_MAP[symptom_key])
 					if logged_symptom_success:

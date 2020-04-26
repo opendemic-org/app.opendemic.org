@@ -2,10 +2,11 @@ import time
 import os
 import random
 from config.config import CONFIG, LOCAL, logger
-from config.types import TelegramBotCommand, Symptoms
 from telebot.types import Update
 from flask import Blueprint, request, abort
 import datetime
+from opendemic.webhook.telegram.types import TelegramBotCommand
+from opendemic.human.symptom.types import Symptoms
 from opendemic.webhook.telegram.model import log_action, log_sent_message
 from opendemic.human.model import Human, create_human, verify_telegram_id_exists
 from opendemic.webhook.telegram.util import get_telegram_menu, get_telegram_bot_instance, \
