@@ -4,11 +4,11 @@ os.environ['FLASK_ENV'] = 'production'
 os.environ['LOCAL'] = '0'
 """
 from config.config import CONFIG, LOCAL, logger
-from config.types import Symptoms
 from helpers.id import verify_uuid_regex
 from opendemic.database import RDBManager
 from opendemic.webhook.telegram.util import get_telegram_bot_instance, make_reply_keyboard_markup
 from opendemic.map.model import CoordinateType
+from opendemic.human.symptom.types import Symptoms
 from helpers.formatting import mysql_db_format_value
 from enum import Enum
 import uuid
