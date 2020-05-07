@@ -208,8 +208,10 @@ class Human(object):
 			_, err = rdb.execute(
 				sql_query="""
 					INSERT IGNORE 
-					INTO `geolocations`(`human_id`, `created`, `modified`, `latitude`, `longitude`)
-					VALUES ({}, UTC_TIMESTAMP(), UTC_TIMESTAMP(), {}, {})
+					INTO `geolocations`(
+						`human_id`, `created`, `modified`, `latitude`, `longitude`, `latitude_noise`, `longitude_noise`
+					)
+					VALUES ({}, UTC_TIMESTAMP(), UTC_TIMESTAMP(), {}, {}, gauss(0,0.001), gauss(0,0.001))
 				""".format(
 					mysql_db_format_value(value=self.id),
 					mysql_db_format_value(value=latitude),
@@ -443,24 +445,19 @@ def get_risky_humans(lat: float, lng: float, days_window: int, km_radius: int) -
 		risky_humans, err = rdb.execute(
 			sql_query="""						
 				SELECT 
+					agg.`latitude` AS {},
+					agg.`longitude` AS {},
 					CASE
-						WHEN agg.`risk_level` = 5 THEN round(agg.`latitude` + gauss(0,0.002), 5)
-						ELSE round(agg.`latitude` + gauss(0,0.001), 5)
-					 END AS {},
-					 CASE
-						WHEN agg.`risk_level` = 5 THEN round(agg.`longitude` + gauss(0,0.002), 5)
-						ELSE round(agg.`longitude` + gauss(0,0.001), 5)
-					 END AS {},
-					CASE
-						WHEN agg.`risk_level` > 1 THEN agg.`risk_level`
+						WHEN agg.`risk_level` IN (4,5) THEN agg.`risk_level`
+						WHEN COUNT(DISTINCT(agg.`symptom`)) > 3 THEN 3
 						ELSE COUNT(DISTINCT(agg.`symptom`))
 					END AS 'mag' 
 				FROM (
 				SELECT
 					geo.`human_id`,
 					DATE(sym.`created`) AS 'date',
-					geo.`latitude`,
-					geo.`longitude`,
+					geo.`latitude` + geo.`latitude_noise` AS 'latitude',
+					geo.`longitude` + geo.`longitude_noise` AS 'longitude',
 					sym.`symptom`,
 					round(( 6373 * acos( least(1.0,  
 						cos( radians({}) ) 
