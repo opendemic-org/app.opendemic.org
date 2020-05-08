@@ -259,7 +259,8 @@
     </div>
 <script type="text/javascript">
     mapboxgl.accessToken = "pk.eyJ1IjoiZGF2aWRhdWdnaSIsImEiOiJjazdxczVod2wwN2ZwM2VuemkzY2l2NG5kIn0.GPlrMe9eVHm8twoWcghGpw";
-
+    var lat1;
+    var long1;
     /* Map: This represents the map on the page. */
     var map = new mapboxgl.Map({
         container: "map",
@@ -312,8 +313,38 @@
             legend.appendChild(item);
         }
     {% endif %}
+
+
+
     map.on('moveend', function() {
-      var url = '/map?lng='+map.getCenter().lng+'&lat='+map.getCenter().lat
+        var lat2 = lat1
+        lat1 = map.getCenter().lat
+        var lon2 = lon1
+        lon1 = map.getCenter().lng
+        var dist;
+        if ((lat1 == lat2) && (lon1 == lon2)) {
+            dist = 0;
+        }
+        else {
+            var radlat1 = Math.PI * lat1/180;
+            var radlat2 = Math.PI * lat2/180;
+            var theta = lon1-lon2;
+            var radtheta = Math.PI * theta/180;
+            var dist = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+            if (dist > 1) {
+                dist = 1;
+            }
+            dist = Math.acos(dist);
+            dist = dist * 180/Math.PI;
+            dist = dist * 60 * 1.1515;
+            dist = dist * 1.609344
+        }
+      if (dist <= {{ km_radius}}) {
+        return;
+      }
+      currentLat = map.getCenter().lat
+      currentLong = map.getCenter().lng
+      var url = '/map?lng='+map.getCenter().lng+'&lat='+currentLat
       const Http = new XMLHttpRequest();
       Http.open("GET", url);
       Http.send();
@@ -326,13 +357,18 @@
        }
       }
     });
+
+    /*
     map.addControl(
         new MapboxGeocoder({
         accessToken: mapboxgl.accessToken,
         mapboxgl: mapboxgl
         })
-    );
+    );*/
+
     map.on("load", function () {
+        lat1 = map.getCenter().lat
+        lon1 = map.getCenter().lon
         // add radius
         map.addSource("radius", {
             "type": "geojson",
