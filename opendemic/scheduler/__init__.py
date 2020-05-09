@@ -2,6 +2,7 @@ from config.config import CONFIG
 from apscheduler.schedulers.background import BackgroundScheduler
 from opendemic.webhook.telegram.util import get_telegram_menu, get_telegram_bot_instance
 from opendemic.human.model import Human, get_all_humans_for_telegram_notifications, HumanProperties
+from opendemic.scheduler.confirmed_cases import update_confirmed_cases
 
 
 def send_reminders(hours_of_day: list):
@@ -124,4 +125,5 @@ def create_scheduler() -> BackgroundScheduler:
 	scheduler.add_job(send_reminders, 'cron', args=[[8, 20]], day='*', hour='*/2', minute='0')
 	scheduler.add_job(send_daily_report, 'cron', args=[[8]], day='*', hour='*/2', minute='0')
 	scheduler.add_job(send_feedback_request, 'cron', args=[[10]], day='*/2', hour='*/2', minute='0')
+	scheduler.add_job(update_confirmed_cases(), 'cron', day='*', hour='1', minute='0')
 	return scheduler
