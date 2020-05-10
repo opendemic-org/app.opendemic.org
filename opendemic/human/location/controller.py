@@ -34,7 +34,18 @@ def location():
 
     human = model.get_human_from_fingerprint(fingerprint=params[LocationResourceFields.FINGERPRINT.value])
     if human is None:
-        human = model.create_human(fingerprint=params[LocationResourceFields.FINGERPRINT.value])
+        human, err = model.create_human(fingerprint=params[LocationResourceFields.FINGERPRINT.value])
+        if err is not None:
+            logger.error(err)
+            response = Response(
+                response=json.dumps({
+                    "error": "Error creating human with fingerprint {}".format(params[LocationResourceFields.FINGERPRINT.value])
+                }),
+                status=403,
+                mimetype='application/json'
+            )
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response
 
     human.log_location(
         latitude=float(params[LocationResourceFields.LATITUDE.value]),
