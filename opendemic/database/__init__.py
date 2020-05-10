@@ -8,9 +8,13 @@ QUERY_DURATION = prometheus_client.Histogram('query_ms', 'Query execution time',
 
 
 class RDBManager(object):
-	def __init__(self):
+	def __init__(self, reader=False):
+		if reader:
+			host=CONFIG.get('rds-aurora-mysql-opendemic-host-reader')
+		else:
+			host=CONFIG.get('rds-aurora-mysql-opendemic-host')
 		self.connection = pymysql.connect(
-			host=CONFIG.get('rds-aurora-mysql-opendemic-host'),
+			host,
 			port=CONFIG.getint('rds-aurora-mysql-opendemic-port'),
 			user=CONFIG.get('rds-aurora-mysql-opendemic-username'),
 			password=CONFIG.get('rds-aurora-mysql-opendemic-password'),

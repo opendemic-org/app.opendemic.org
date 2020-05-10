@@ -90,7 +90,7 @@ class Human(object):
 		return err is None
 
 	def get_human_attribute(self, attribute_name: str) -> str:
-		rdb = RDBManager()
+		rdb = RDBManager(True)
 		try:
 			human_id_search_results, err = rdb.execute(
 				sql_query="""
@@ -129,7 +129,7 @@ class Human(object):
 		return err
 
 	def get_most_recent_location(self) -> (float, float):
-		rdb = RDBManager()
+		rdb = RDBManager(True)
 		err = None
 		try:
 			most_recent_location, err = rdb.execute(
@@ -248,7 +248,7 @@ class Human(object):
 
 
 def get_human_from_fingerprint(fingerprint: str) -> Human:
-	rdb = RDBManager()
+	rdb = RDBManager(True)
 	err = None
 	try:
 		records, err = rdb.execute(
@@ -278,7 +278,7 @@ def get_all_humans_for_telegram_notifications(hours_of_day: list) -> list:
 
 	hours_of_day = list(set(hours_of_day))
 
-	rdb = RDBManager()
+	rdb = RDBManager(True)
 	audience = []
 	try:
 		audience, err = rdb.execute(
@@ -306,7 +306,7 @@ def verify_telegram_id_exists(telegram_human_id: int) -> (bool, str):
 	if not isinstance(telegram_human_id, int):
 		return TypeError('`telegram_human_id` of type {}. Expected [int]'.format(type(telegram_human_id)))
 
-	rdb = RDBManager()
+	rdb = RDBManager(True)
 	err = None
 	try:
 		telegram_human_id_search_results, err = rdb.execute(
@@ -402,7 +402,7 @@ def verify_human_exists(human_id: str) -> (bool, dict):
 	if not verify_uuid_regex(s=human_id):
 		return False, None
 
-	rdb = RDBManager()
+	rdb = RDBManager(True)
 	err = None
 	try:
 		human_id_search_results, err = rdb.execute(
@@ -425,7 +425,7 @@ def verify_human_exists(human_id: str) -> (bool, dict):
 
 
 def get_risky_humans(lat: float, lng: float, days_window: int, km_radius: int) -> list:
-	rdb = RDBManager()
+	rdb = RDBManager(True)
 	err = None
 	try:
 		risky_humans, err = rdb.execute(
