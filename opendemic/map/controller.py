@@ -2,6 +2,8 @@ from config.config import CONFIG, logger
 from flask import Blueprint, render_template, abort, request
 from opendemic.human.model import Human, get_risky_humans_geojson
 from opendemic.map.model import CoordinateType
+import json
+
 DEFAULT_LNG, DEFAULT_LAT = -73.966912, 40.715857
 MAP_TEMPLATE = 'map.html'
 
@@ -45,6 +47,18 @@ def local_map(human_id):
 		include_legend=True,
 		zoom_level=9
 	)
+
+
+@blueprint.route('/map', methods=['GET'])
+def dynamic_map():
+
+	risky_humans_geojson = get_risky_humans_geojson(
+		lat=request.args.get('lat', None),
+		lng=request.args.get('lng', None),
+		days_window=int(CONFIG.get('days_window')),
+		km_radius=int(CONFIG.get('km_radius'))
+	)
+	return json.dumps(risky_humans_geojson)
 
 
 @blueprint.route('/global/<string:token>', methods=['GET'])

@@ -7,7 +7,7 @@
 
     <script src='https://api.mapbox.com/mapbox-gl-js/v1.8.0/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v1.8.0/mapbox-gl.css' rel='stylesheet' />
-
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.5.1/mapbox-gl-geocoder.min.js"></script>
     <style>
         body { margin: 0; padding: 0; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
@@ -81,8 +81,162 @@
             height: 10px;
             margin-right: 5px;
         }
+        .mapboxgl-ctrl-geocoder {
+          font-size: 18px;
+          line-height: 24px;
+          font-family: "Open Sans", "Helvetica Neue", Arial, Helvetica, sans-serif;
+          position: relative;
+          background-color: #fff;
+          min-width: 240px;
+          z-index: 1;
+          border-radius: 4px;
+          transition: width .25s, min-width .25s;
+        }
+         .mapboxgl-ctrl-geocoder--input {
+          font: inherit;
+          border: 0;
+          background-color: transparent;
+          margin: 0;
+          height: 50px;
+          color: #404040; /* fallback */
+          color: rgba(0, 0, 0, 0.75);
+          padding: 6px 45px;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          overflow: hidden;
+        }
+        .mapboxgl-ctrl-geocoder--input::-ms-clear {
+          display: none; /* hide input clear button in IE */
+        }
 
+        .mapboxgl-ctrl-geocoder--input:focus {
+          color: #404040; /* fallback */
+          color: rgba(0, 0, 0, 0.75);
+          outline: 0;
+          box-shadow: none;
+          outline: thin dotted\8;
+        }
 
+        .mapboxgl-ctrl-geocoder .mapboxgl-ctrl-geocoder--pin-right > * {
+          z-index: 2;
+          position: absolute;
+          right: 8px;
+          top: 7px;
+          display: none;
+        }
+        .mapboxgl-ctrl-geocoder,
+        .mapboxgl-ctrl-geocoder .suggestions {
+          box-shadow: 0 0 10px 2px rgba(0,0,0,.1);
+        }
+
+        /* Collapsed */
+        .mapboxgl-ctrl-geocoder.mapboxgl-ctrl-geocoder--collapsed {
+          width: 50px;
+          min-width: 50px;
+          transition: width .25s, min-width .25s;
+        }
+
+        /* Suggestions */
+        .mapboxgl-ctrl-geocoder .suggestions {
+          background-color: #fff;
+          border-radius: 4px;
+          left: 0;
+          list-style: none;
+          margin: 0;
+          padding: 0;
+          position: absolute;
+          width: 100%;
+          top: 110%; /* fallback */
+          top: calc(100% + 6px);
+          z-index: 1000;
+          overflow: hidden;
+          font-size: 15px;
+        }
+
+        .mapboxgl-ctrl-bottom-left .suggestions,
+        .mapboxgl-ctrl-bottom-right .suggestions {
+          top: auto;
+          bottom: 100%;
+        }
+
+        .mapboxgl-ctrl-geocoder .suggestions > li > a {
+          cursor: default;
+          display: block;
+          padding: 6px 12px;
+          color: #404040;
+        }
+
+        .mapboxgl-ctrl-geocoder .suggestions > .active > a,
+        .mapboxgl-ctrl-geocoder .suggestions > li > a:hover {
+          color: #404040;
+          background-color: #f3f3f3;
+          text-decoration: none;
+          cursor: pointer;
+        }
+
+        .mapboxgl-ctrl-geocoder--suggestion-title {
+          font-weight: bold;
+        }
+
+        .mapboxgl-ctrl-geocoder--suggestion-title,
+        .mapboxgl-ctrl-geocoder--suggestion-address {
+          text-overflow: ellipsis;
+          overflow: hidden;
+          white-space: nowrap;
+        }
+
+        /* Icons */
+        .mapboxgl-ctrl-geocoder--icon {
+          display: inline-block;
+          vertical-align: middle;
+          speak: none;
+          fill: #757575;
+          top: 15px;
+        }
+
+        .mapboxgl-ctrl-geocoder--icon-search {
+          position: absolute;
+          top: 13px;
+          left: 12px;
+          width: 23px;
+          height: 23px;
+        }
+
+        .mapboxgl-ctrl-geocoder--button {
+          padding: 0;
+          margin: 0;
+          border: none;
+          cursor: pointer;
+          background: #fff;
+          line-height: 1;
+        }
+
+        .mapboxgl-ctrl-geocoder--icon-close {
+          width: 20px;
+          height: 20px;
+          margin-top: 8px;
+          margin-right: 3px;
+        }
+
+        .mapboxgl-ctrl-geocoder--button:hover .mapboxgl-ctrl-geocoder--icon-close {
+          fill: #909090;
+        }
+
+        .mapboxgl-ctrl-geocoder--icon-loading {
+          width: 26px;
+          height: 26px;
+          margin-top: 5px;
+          margin-right: 0px;
+          -moz-animation: rotate 0.8s infinite cubic-bezier(0.45, 0.05, 0.55, 0.95);
+          -webkit-animation: rotate 0.8s infinite cubic-bezier(0.45, 0.05, 0.55, 0.95);
+          animation: rotate 0.8s infinite cubic-bezier(0.45, 0.05, 0.55, 0.95);
+        }
+        .loader {
+            position: absolute;
+            top:  50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            }
     </style>
 
 </head>
@@ -92,9 +246,21 @@
 {% if include_legend %}
     <div class='map-overlay' id='legend'></div>
 {% endif %}
+<div class="loader loader--style1" title="0" id="loader">
+        <svg version="1.1" id="loader-1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="40px" height="40px" viewBox="0 0 40 40" enable-background="new 0 0 40 40" xml:space="preserve">
+            <path opacity="0.2" fill="#ff9900" d="M20.201,5.169c-8.254,0-14.946,6.692-14.946,14.946c0,8.255,6.692,14.946,14.946,14.946
+    s14.946-6.691,14.946-14.946C35.146,11.861,28.455,5.169,20.201,5.169z M20.201,31.749c-6.425,0-11.634-5.208-11.634-11.634
+    c0-6.425,5.209-11.634,11.634-11.634c6.425,0,11.633,5.209,11.633,11.634C31.834,26.541,26.626,31.749,20.201,31.749z" />
+            <path fill="#000" d="M26.013,10.047l1.654-2.866c-2.198-1.272-4.743-2.012-7.466-2.012h0v3.312h0
+    C22.32,8.481,24.301,9.057,26.013,10.047z">
+                <animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur="0.5s" repeatCount="indefinite" />
+            </path>
+        </svg>
+    </div>
 <script type="text/javascript">
     mapboxgl.accessToken = "pk.eyJ1IjoiZGF2aWRhdWdnaSIsImEiOiJjazdxczVod2wwN2ZwM2VuemkzY2l2NG5kIn0.GPlrMe9eVHm8twoWcghGpw";
-
+    var lat1;
+    var long1;
     /* Map: This represents the map on the page. */
     var map = new mapboxgl.Map({
         container: "map",
@@ -121,11 +287,11 @@
     var mag5 = ['>=', ['get', 'mag'], 5];
 
     // colors to use for the categories
-    var colors = ['#fed976', '#feb24c', '#fd8d3c', '#fc4e2a', '#3b5998'];
+    var colors = ['#ffff00', '#ffbf00', '#ff6a00', '#ff0000', '#3b5998'];
     var layers = [
-        'Risk level 1&nbsp;',
-        'Risk level 2&nbsp;',
-        'Risk level 3&nbsp;',
+        'Risk level low&nbsp;',
+        'Risk level medium&nbsp;',
+        'Risk level high&nbsp;',
         'Self-reported COVID&nbsp;',
         'Official COVID&nbsp;'
     ];
@@ -148,7 +314,61 @@
         }
     {% endif %}
 
+
+
+    map.on('moveend', function() {
+        var lat2 = lat1
+        lat1 = map.getCenter().lat
+        var lon2 = lon1
+        lon1 = map.getCenter().lng
+        var dist;
+        if ((lat1 == lat2) && (lon1 == lon2)) {
+            dist = 0;
+        }
+        else {
+            var radlat1 = Math.PI * lat1/180;
+            var radlat2 = Math.PI * lat2/180;
+            var theta = lon1-lon2;
+            var radtheta = Math.PI * theta/180;
+            var dist = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+            if (dist > 1) {
+                dist = 1;
+            }
+            dist = Math.acos(dist);
+            dist = dist * 180/Math.PI;
+            dist = dist * 60 * 1.1515;
+            dist = dist * 1.609344
+        }
+      if (dist <= {{ km_radius}}) {
+        return;
+      }
+      currentLat = map.getCenter().lat
+      currentLong = map.getCenter().lng
+      var url = '/map?lng='+map.getCenter().lng+'&lat='+currentLat
+      const Http = new XMLHttpRequest();
+      Http.open("GET", url);
+      Http.send();
+      document.getElementById("loader").style.visibility = "visible";
+
+      Http.onreadystatechange = (e) => {
+      if(Http.readyState === XMLHttpRequest.DONE && Http.status === 200) {
+        document.getElementById("loader").style.visibility = "hidden";
+        map.getSource('cases').setData(JSON.parse(Http.response));
+       }
+      }
+    });
+
+    /*
+    map.addControl(
+        new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        mapboxgl: mapboxgl
+        })
+    );*/
+
     map.on("load", function () {
+        lat1 = map.getCenter().lat
+        lon1 = map.getCenter().lon
         // add radius
         map.addSource("radius", {
             "type": "geojson",
@@ -306,6 +526,7 @@
             },
             'waterway-label'
         );
+    document.getElementById("loader").style.visibility = "hidden";
     });
 
 </script>

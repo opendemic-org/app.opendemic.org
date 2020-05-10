@@ -125,18 +125,3 @@ def create_app():
     def metrics():
         return Response(prometheus_client.generate_latest(), mimetype=CONTENT_TYPE_LATEST)
     return app
-
-    # TODO move gauss function to migration
-    rdb = RDBManager()
-    err_drop_gauss_function = rdb.pre_execute(sql_query="DROP FUNCTION IF EXISTS gauss;")
-    err_create_gauss_function = rdb.pre_execute(sql_query="""
-        CREATE FUNCTION gauss(mean float, stdev float) RETURNS float
-        BEGIN
-        set @x=rand(), @y=rand();
-        set @gaus = ((sqrt(-2*log(@x))*cos(2*pi()*@y))*stdev)+mean;
-        return @gaus;
-        END;
-    """)
-    del rdb
-
-    return app

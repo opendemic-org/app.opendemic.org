@@ -10,7 +10,7 @@ ngrok.sh
 __pycache__/
 dev_run_local.sh
 dev_worker_local.sh
-
+.mypy_cache
 instance/
 
 .pytest_cache/

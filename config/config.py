@@ -8,7 +8,7 @@ from configparser import ConfigParser, ExtendedInterpolation
 import logging.handlers
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
-
+import sys
 
 class Environments(Enum):
 	DEFAULT = 'DEFAULT'
@@ -36,7 +36,7 @@ logger.addHandler(ch)
 logger.debug("RUNNING CONFIG...")
 
 # verify secrets cache
-if not os.path.isfile('./config/secrets.ini'):
+if not os.path.isfile(sys.path[0]+'/config/secrets.ini'):
 	logger.debug("COLLECTING SECRETS...")
 	secret_names = {i.name:[] for i in list(Environments)}
 	for secret_data in list_secrets():
@@ -74,7 +74,7 @@ if not os.path.isfile('./config/secrets.ini'):
 			for index, key in enumerate(secret_value):
 				secrets_config[secret_section][alt_secret_name+"-"+key] = str(secret_value[key])
 
-	with open('./config/secrets.ini', 'w') as secrets_config_file:
+	with open(sys.path[0]+'/config/secrets.ini', 'w') as secrets_config_file:
 		secrets_config.write(secrets_config_file)
 
 	del secrets_config
@@ -83,7 +83,7 @@ if not os.path.isfile('./config/secrets.ini'):
 config_parser = ConfigParser(interpolation=ExtendedInterpolation())
 
 # read .ini files
-file_paths = glob.glob('./config/*.ini')
+file_paths = glob.glob(sys.path[0]+'/config/*.ini')
 config_parser.read(filenames=file_paths)
 
 # get current environment
