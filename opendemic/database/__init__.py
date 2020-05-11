@@ -54,3 +54,11 @@ class RDBManager(object):
 			logger.error(e)
 			err = e
 		return result, err
+
+
+def generate_db_uri():
+	return 'mysql://' + CONFIG.get('rds-aurora-mysql-opendemic-username') + ':' + \
+           CONFIG.get('rds-aurora-mysql-opendemic-password') + '@' + \
+           CONFIG.get('rds-aurora-mysql-opendemic-host') + ':' + \
+           CONFIG.get('rds-aurora-mysql-opendemic-port') + '/' + \
+           CONFIG.get('rds-aurora-mysql-opendemic-database')
