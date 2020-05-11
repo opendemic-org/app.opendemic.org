@@ -165,15 +165,17 @@ def coord_to_fips(lat: float, lng: float) -> Tuple[str, str, str]:
 			if county_fips_response_key in data[results_response_key][0]:
 				fips: str = data[results_response_key][0][county_fips_response_key]
 				county_name: str = data[results_response_key][0][county_name_response_key]
+				country: str = 'USA'
 				if fips in _NYC_COUNTIES_FIPS_TO_NAME.keys():
 					fips: str = _NYC_FIPS
 					county_name: str = "New York City"
 				return (
 					fips,
 					county_name,
-					data[results_response_key][0][state_name_response_key]
+					data[results_response_key][0][state_name_response_key],
+					country
 				)
-	return None, None, None
+	return None, None, None, None
 
 
 def update_rt_estimates_usa():
