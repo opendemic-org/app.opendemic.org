@@ -66,7 +66,18 @@ def symptom():
 
 		human = get_human_from_fingerprint(fingerprint=fingerprint)
 		if human is None:
-			human = create_human(fingerprint=fingerprint)
+			human, err = create_human(fingerprint=fingerprint)
+			if err is not None:
+				logger.error(err)
+				response = Response(
+					response=json.dumps({
+						"error": "Error creating human with fingerprint {}".format(fingerprint)
+					}),
+					status=403,
+					mimetype='application/json'
+				)
+				response.headers.add('Access-Control-Allow-Origin', '*')
+				return response
 
 		if SymptomResourceFields.LOCATION.value in payload:
 			if SymptomResourceFields.LOCATION_LAT.value in payload[SymptomResourceFields.LOCATION.value] and \

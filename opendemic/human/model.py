@@ -10,6 +10,7 @@ from opendemic.webhook.telegram.util import get_telegram_bot_instance, make_repl
 from opendemic.map.model import CoordinateType
 from opendemic.human.symptom.types import Symptoms
 from helpers.formatting import mysql_db_format_value
+from typing import Tuple
 from enum import Enum
 import uuid
 import os
@@ -34,6 +35,7 @@ class HumanProperties(Enum):
 
 class Human(object):
 	_human_id = None
+	_fingerprint_ = None
 	_telegram_human_id = None
 
 	def __init__(self, human_id: str):
@@ -41,6 +43,7 @@ class Human(object):
 		assert human_exists
 
 		self._human_id = human_data[HumanProperties.ID.value]
+		self._fingerprint_ = human_data[HumanProperties.FINGERPRINT.value]
 		try:
 			self._telegram_human_id = int(human_data[HumanProperties.TELEGRAM_HUMAN_ID.value])
 		except TypeError as e:
@@ -50,19 +53,11 @@ class Human(object):
 	def id(self) -> str:
 		return self._human_id
 
-	@property
-	def human_id(self) -> str:
-		return self._human_id
+	def get_fingerprint(self) -> str:
+		return self._fingerprint_
 
 	@property
 	def telegram_human_id(self) -> int:
-		if self._telegram_human_id is None:
-			try:
-				self._telegram_human_id = int(
-					self.get_human_attribute(attribute_name=HumanProperties.TELEGRAM_HUMAN_ID.value)
-				)
-			except TypeError as e:
-				logger.error(e)
 		return self._telegram_human_id
 
 	@property
@@ -95,7 +90,7 @@ class Human(object):
 		return err is None
 
 	def get_human_attribute(self, attribute_name: str) -> str:
-		rdb = RDBManager()
+		rdb = RDBManager(True)
 		try:
 			human_id_search_results, err = rdb.execute(
 				sql_query="""
@@ -110,17 +105,13 @@ class Human(object):
 		if len(human_id_search_results) == 1:
 			if attribute_name in human_id_search_results[0]:
 				return human_id_search_results[0][attribute_name]
-			else:
-				return None
-		else:
-			return None
+		return None
 
 	def log_symptom(self, symptom_name: str) -> bool:
 		if not Symptoms.has_value(symptom_name):
 			return False
 
 		rdb = RDBManager()
-		err = None
 		try:
 			_, err = rdb.execute(
 				sql_query="""
@@ -134,11 +125,11 @@ class Human(object):
 			)
 		except Exception as e:
 			logger.error(e)
-
-		return err is None
+			err = e
+		return err
 
 	def get_most_recent_location(self) -> (float, float):
-		rdb = RDBManager()
+		rdb = RDBManager(True)
 		err = None
 		try:
 			most_recent_location, err = rdb.execute(
@@ -257,7 +248,7 @@ class Human(object):
 
 
 def get_human_from_fingerprint(fingerprint: str) -> Human:
-	rdb = RDBManager()
+	rdb = RDBManager(True)
 	err = None
 	try:
 		records, err = rdb.execute(
@@ -287,7 +278,7 @@ def get_all_humans_for_telegram_notifications(hours_of_day: list) -> list:
 
 	hours_of_day = list(set(hours_of_day))
 
-	rdb = RDBManager()
+	rdb = RDBManager(True)
 	audience = []
 	try:
 		audience, err = rdb.execute(
@@ -315,7 +306,7 @@ def verify_telegram_id_exists(telegram_human_id: int) -> (bool, str):
 	if not isinstance(telegram_human_id, int):
 		return TypeError('`telegram_human_id` of type {}. Expected [int]'.format(type(telegram_human_id)))
 
-	rdb = RDBManager()
+	rdb = RDBManager(True)
 	err = None
 	try:
 		telegram_human_id_search_results, err = rdb.execute(
@@ -368,13 +359,12 @@ def get_proximity_alert(lat: float, lng: float) -> str:
 	return alert_message
 
 
-def create_human(telegram_human_id: int = None, fingerprint: str = None) -> Human:
+def create_human(telegram_human_id: int = None, fingerprint: str = None) -> Tuple[Human, str]:
 	if telegram_human_id is None and fingerprint is None:
 		return None
 
 	human_id = str(uuid.uuid4())
 	rdb = RDBManager()
-	err = None
 	try:
 		_, err = rdb.execute(
 			sql_query="""
@@ -395,12 +385,8 @@ def create_human(telegram_human_id: int = None, fingerprint: str = None) -> Huma
 		)
 	except Exception as e:
 		logger.error(e)
-
-	if err is None:
-		human = Human(human_id=human_id)
-		return human
-
-	return None
+		err = e
+	return Human(human_id=human_id), err
 
 
 def validate_fingerprint(fingerprint: str) -> (bool, Exception):
@@ -416,7 +402,7 @@ def verify_human_exists(human_id: str) -> (bool, dict):
 	if not verify_uuid_regex(s=human_id):
 		return False, None
 
-	rdb = RDBManager()
+	rdb = RDBManager(True)
 	err = None
 	try:
 		human_id_search_results, err = rdb.execute(
@@ -439,7 +425,7 @@ def verify_human_exists(human_id: str) -> (bool, dict):
 
 
 def get_risky_humans(lat: float, lng: float, days_window: int, km_radius: int) -> list:
-	rdb = RDBManager()
+	rdb = RDBManager(True)
 	err = None
 	try:
 		risky_humans, err = rdb.execute(
@@ -507,25 +493,26 @@ def get_risky_humans(lat: float, lng: float, days_window: int, km_radius: int) -
 		)
 	except Exception as e:
 		logger.error(e)
-	if err is None:
-		return risky_humans
-	else:
-		return []
+
+	return risky_humans, err
 
 
 def get_risky_humans_geojson(lat: float, lng: float, days_window: int, km_radius: int) -> dict:
-	risky_humans = get_risky_humans(
+	risky_humans_geojson = {
+		"type": "FeatureCollection",
+		"src": "https://raw.githubusercontent.com/beoutbreakprepared/nCoV2019/master/latest_data/latestdata.csv",
+		"features": []
+	}
+
+	risky_humans, err = get_risky_humans(
 		lat=lat,
 		lng=lng,
 		days_window=days_window,
 		km_radius=km_radius
 	)
 
-	risky_humans_geojson = {
-		"type": "FeatureCollection",
-		"src": "https://raw.githubusercontent.com/beoutbreakprepared/nCoV2019/master/latest_data/latestdata.csv",
-		"features": []
-	}
+	if err is not None:
+		return risky_humans_geojson
 
 	for risky_human in risky_humans:
 		risky_humans_geojson["features"].append({

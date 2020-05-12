@@ -271,7 +271,10 @@ def process_telegram_update(update: Update):
         except Exception as e:
             return '', 204
         else:
-            human = create_human(telegram_human_id=telegram_human_id)
+            human, err = create_human(telegram_human_id=telegram_human_id)
+            if err is not None:
+                logger.error(err)
+                return '', 204
 
             log_sent_message(bot.send_message(
                 chat_id=telegram_human_id,
