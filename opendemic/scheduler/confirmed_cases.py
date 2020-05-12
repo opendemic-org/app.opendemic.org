@@ -6,20 +6,13 @@ import numpy as np
 import tarfile
 from tarfile import TarFile, ExFileObject
 import requests
+from opendemic.database import generate_db_uri
 import sqlalchemy
 from sqlalchemy.engine.base import Engine
 from io import BytesIO
 from typing import List
 
 _CONFIRMED_CASE_DATA_URL: str = "https://github.com/beoutbreakprepared/nCoV2019/blob/master/latest_data/latestdata.tar.gz?raw=true"
-
-
-def generate_db_uri():
-	return 'mysql://' + CONFIG.get('rds-aurora-mysql-opendemic-username') + ':' + \
-		   CONFIG.get('rds-aurora-mysql-opendemic-password') + '@' + \
-		   CONFIG.get('rds-aurora-mysql-opendemic-host') + ':' + \
-		   CONFIG.get('rds-aurora-mysql-opendemic-port') + '/' + \
-		   CONFIG.get('rds-aurora-mysql-opendemic-database')
 
 
 def get_existing_source_ids() -> List[str]:
@@ -55,7 +48,7 @@ def clean_data(data: pd.DataFrame) -> pd.DataFrame:
 	try:
 		source_ids_to_remove = get_existing_source_ids()
 	except Exception as e:
-		raise e
+		logger.error(e)
 	else:
 		data: pd.DataFrame = data[~data['source_id'].isin(source_ids_to_remove)]
 	return data
