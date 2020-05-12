@@ -18,7 +18,7 @@ depends_on = None
 def upgrade():
 	conn = op.get_bind()
 	conn.execute("""
-	CREATE TABLE `rt_estimates` (
+	CREATE TABLE IF NOT EXISTS `rt_estimates` (
 		`date` date NOT NULL,
 		`rt_estimate` decimal(14,4) DEFAULT NULL,
 		`rt_low` decimal(14,4) DEFAULT NULL,
