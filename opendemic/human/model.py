@@ -125,8 +125,8 @@ class Human(object):
 			)
 		except Exception as e:
 			logger.error(e)
-			err = e
-		return err
+			return False
+		return err is None
 
 	def get_most_recent_location(self) -> (float, float):
 		rdb = RDBManager(True)
@@ -202,11 +202,11 @@ class Human(object):
 					INTO `geolocations`(
 						`human_id`, `created`, `modified`, `latitude`, `longitude`, `latitude_noise`, `longitude_noise`
 					)
-					VALUES ({}, UTC_TIMESTAMP(), UTC_TIMESTAMP(), {}, {}, gauss(0,0.001), gauss(0,0.001))
+					VALUES ({}, UTC_TIMESTAMP(), UTC_TIMESTAMP(), {}, {}, ROUND(gauss(0,0.001), 10), ROUND(gauss(0,0.001), 10))
 				""".format(
 					mysql_db_format_value(value=self.id),
-					mysql_db_format_value(value=latitude),
-					mysql_db_format_value(value=longitude)
+					mysql_db_format_value(value=round(latitude, 10)),
+					mysql_db_format_value(value=round(longitude, 10))
 				)
 			)
 		except Exception as e:
