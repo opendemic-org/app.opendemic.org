@@ -1,7 +1,6 @@
 import time
-import os
 import random
-from config.config import CONFIG, LOCAL, logger
+from config.config import CONFIG, logger
 from telebot.types import Update
 from flask import Blueprint, request, abort
 import datetime
@@ -48,16 +47,12 @@ def fulfill_log_symptom(human: Human, symptom_name: str) -> bool:
 def fulfill_my_map_request(human: Human) -> bool:
     bot = get_telegram_bot_instance()
     try:
-        if LOCAL:
-            map_url = os.path.join(CONFIG.get('local-base-url'), "map", human.id)
-        else:
-            map_url = os.path.join(CONFIG.get('base-url'), "map", human.id)
         bot.send_message(
             chat_id=human.telegram_human_id,
             text="See who's around you 👇",
             parse_mode='markdown',
             reply_markup=make_reply_keyboard_markup(markup_map=[
-                {'text': "🌍 See Map", 'url': map_url},
+                {'text': "🌍 See Map", 'url': CONFIG.get('client-url')},
             ])
         )
     except Exception as e:
