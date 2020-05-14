@@ -3,7 +3,7 @@ import os
 os.environ['FLASK_ENV'] = 'production'
 os.environ['LOCAL'] = '0'
 """
-from config.config import CONFIG, LOCAL, logger
+from config.config import CONFIG, logger
 from helpers.id import verify_uuid_regex
 from opendemic.database import RDBManager
 from opendemic.webhook.telegram.util import get_telegram_bot_instance, make_reply_keyboard_markup
@@ -13,7 +13,6 @@ from helpers.formatting import mysql_db_format_value
 from typing import Tuple
 from enum import Enum
 import uuid
-import os
 
 
 class HumanProperties(Enum):
@@ -168,18 +167,13 @@ class Human(object):
 		alert_message = get_proximity_alert(lat=lat, lng=lng)
 
 		bot = get_telegram_bot_instance()
-		if LOCAL:
-			map_url = os.path.join(CONFIG.get('local-base-url'), "map", self.id)
-		else:
-			map_url = os.path.join(CONFIG.get('base-url'), "map", self.id)
-
 		try:
 			bot.send_message(
 				chat_id=self.telegram_human_id,
 				text=alert_message,
 				parse_mode='markdown',
 				reply_markup=make_reply_keyboard_markup(markup_map=[
-					{'text': "🌍 See Map", 'url': map_url},
+					{'text': "🌍 See Map", 'url': CONFIG.get('client-url')},
 				])
 			)
 		except Exception as e:
