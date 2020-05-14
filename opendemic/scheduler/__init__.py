@@ -125,5 +125,5 @@ def create_scheduler() -> BackgroundScheduler:
 	scheduler.add_job(send_reminders, 'cron', args=[[8, 20]], day='*', hour='*/2', minute='0')
 	scheduler.add_job(send_daily_report, 'cron', args=[[8]], day='*', hour='*/2', minute='0')
 	scheduler.add_job(send_feedback_request, 'cron', args=[[10]], day='*/2', hour='*/2', minute='0')
-	scheduler.add_job(update_confirmed_cases(), 'cron', day='*', hour='1', minute='0')
+	scheduler.add_job(update_confirmed_cases, 'cron', day='*', hour='1', minute='0')
 	return scheduler

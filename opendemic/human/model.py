@@ -125,8 +125,8 @@ class Human(object):
 			)
 		except Exception as e:
 			logger.error(e)
-			err = e
-		return err
+			return False
+		return err is None
 
 	def get_most_recent_location(self) -> (float, float):
 		rdb = RDBManager(True)
@@ -202,11 +202,11 @@ class Human(object):
 					INTO `geolocations`(
 						`human_id`, `created`, `modified`, `latitude`, `longitude`, `latitude_noise`, `longitude_noise`
 					)
-					VALUES ({}, UTC_TIMESTAMP(), UTC_TIMESTAMP(), {}, {}, gauss(0,0.001), gauss(0,0.001))
+					VALUES ({}, UTC_TIMESTAMP(), UTC_TIMESTAMP(), {}, {}, ROUND(gauss(0,0.001), 10), ROUND(gauss(0,0.001), 10))
 				""".format(
 					mysql_db_format_value(value=self.id),
-					mysql_db_format_value(value=latitude),
-					mysql_db_format_value(value=longitude)
+					mysql_db_format_value(value=round(latitude, 10)),
+					mysql_db_format_value(value=round(longitude, 10))
 				)
 			)
 		except Exception as e:
@@ -363,10 +363,10 @@ def create_human(telegram_human_id: int = None, fingerprint: str = None) -> Tupl
 	if telegram_human_id is None and fingerprint is None:
 		return None
 
-	human_id = str(uuid.uuid4())
-	rdb = RDBManager()
+	human_id: str = str(uuid.uuid4())
+	rdb: RDBManager = RDBManager(reader=False)
 	try:
-		_, err = rdb.execute(
+		_, db_err = rdb.execute(
 			sql_query="""
 				INSERT IGNORE INTO `humans`(
 					`{}`, `{}`, `{}`, `created`, `modified`
@@ -383,10 +383,17 @@ def create_human(telegram_human_id: int = None, fingerprint: str = None) -> Tupl
 				mysql_db_format_value(value=fingerprint)
 			)
 		)
-	except Exception as e:
-		logger.error(e)
-		err = e
-	return Human(human_id=human_id), err
+	except Exception as query_creation_err:
+		logger.error(query_creation_err)
+		return None, query_creation_err
+	if db_err is not None:
+		return None, db_err
+	try:
+		new_human: Human = Human(human_id=human_id)
+	except AssertionError as assert_err:
+		logger.error(assert_err)
+		return None, assert_err
+	return new_human, None
 
 
 def validate_fingerprint(fingerprint: str) -> (bool, Exception):
