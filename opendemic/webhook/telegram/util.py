@@ -3,6 +3,7 @@ import time
 import os
 from telebot import types, TeleBot
 from werkzeug.local import LocalProxy
+import requests
 
 
 def get_telegram_bot_instance() -> TeleBot:
@@ -43,20 +44,25 @@ def make_reply_keyboard_markup(markup_map: list, column_stacked: bool = True) ->
 
 
 def register_webhook_url() -> bool:
-    bot = get_telegram_bot_instance()
     try:
-        bot.remove_webhook()
         time.sleep(0.1)
         if LOCAL:
             url = os.path.join(CONFIG.get('local-base-url'), "webhook/telegram", CONFIG.get('webhook_token'))
         else:
             url = os.path.join(CONFIG.get('base-url'), "webhook/telegram", CONFIG.get('webhook_token'))
         logger.info("[TELEGRAM WEBHOOK] registering webhook: {}".format(url))
-        bot.set_webhook(url=url)
+        payload = {'url': url}
+        session = requests.Session()
+        response = session.post(
+            url='https://api.telegram.org/bot{}/setWebhook'.format(CONFIG.get('telegram-credentials-telegram-token')),
+            data=payload
+        )
     except Exception as e:
         logger.error(e)
         return False
-    return True
+    if 'result' in response.json():
+        return response.json()['result']
+    return False
 
 
 def get_webhook_update(request: LocalProxy) -> types.Update:
