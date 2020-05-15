@@ -13,6 +13,8 @@ from helpers.formatting import mysql_db_format_value
 from typing import Tuple
 from enum import Enum
 import uuid
+import os
+import time
 
 
 class HumanProperties(Enum):
@@ -382,10 +384,11 @@ def create_human(telegram_human_id: int = None, fingerprint: str = None) -> Tupl
 		return None, query_creation_err
 	if db_err is not None:
 		return None, db_err
+	time.sleep(0.1)
 	try:
 		new_human: Human = Human(human_id=human_id)
 	except AssertionError as assert_err:
-		logger.error(assert_err)
+		logger.error("Error while fetching human with id: ", human_id, assert_err)
 		return None, assert_err
 	return new_human, None
 
