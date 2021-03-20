@@ -23,7 +23,7 @@ importlib-resources==1.4.0
 imutils==0.5.3
 inflection==0.3.1
 itsdangerous==1.1.0
-Jinja2==2.10.3
+Jinja2==2.11.3
 jmespath==0.9.4
 joblib==0.14.0
 kiwisolver==1.1.0
